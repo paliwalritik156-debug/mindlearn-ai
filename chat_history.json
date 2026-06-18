@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "role": "assistant",
+    "content": "Hello. I'm here to help you with any questions you have about the provided context, which appears to be related to human rights. What would you like to know?"
+  }
+]
