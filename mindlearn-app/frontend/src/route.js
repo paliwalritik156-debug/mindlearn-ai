@@ -17,3 +17,4 @@ export function resetToken(){
   return m ? m[1] : null
 }
 
+export function isAdminRoute(){ return location.hash === "#/admin" }

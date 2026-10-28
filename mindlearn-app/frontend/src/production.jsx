@@ -3,7 +3,7 @@ import { SettingsExtras } from "./v28.jsx"
 import { createPortal } from "react-dom"
 import { Component, useEffect, useRef, useState } from "react"
 import {
-  api, setAuthToken, sounds, isSoundOn, setSoundOn, useLocalState, useDark, Spin, Skeleton, toast, uploadPdfs, downloadFile, esc,
+  api, setAuthToken, sounds, isSoundOn, setSoundOn, useLocalState, useDark, Spin, Skeleton, toast, uploadPdfs, upStatus, downloadFile, esc,
   LANGS, THEMES, syncInfo, syncPull, readSyncData, SYNC_KEYS, FUN_META,
 } from "./lib.jsx"
 import { listLibrary, getLibraryFile, removeFromLibrary, clearLibrary, savePdfs, pdfNames } from "./pdfstore.js"
@@ -84,11 +84,13 @@ export function ToastHost(){
 
 /* ---------- Upload progress strip ---------- */
 export function UploadStrip({ pct }){
+  const [msg, setMsg] = useState("")
+  useEffect(()=>{ const f = ()=>setMsg(upStatus.msg); window.addEventListener("ml-upmsg", f); return ()=>window.removeEventListener("ml-upmsg", f) },[])
   if(pct == null) return null
   return (
     <div className="up-strip" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
       <div className="up-strip-bar"><div style={{ width: pct + "%" }} /></div>
-      <span>{pct < 100 ? `Uploading… ${pct}%` : "Processing your PDF…"}</span>
+      <span>{pct < 100 ? `${msg || "Uploading"}… ${pct}%` : "Almost done…"}</span>
     </div>
   )
 }

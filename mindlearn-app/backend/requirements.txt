@@ -13,3 +13,5 @@ langchain-core
 langchain-community
 langchain-text-splitters
 langchain-groq
+psycopg[binary]>=3.2
+psycopg-pool>=3.2

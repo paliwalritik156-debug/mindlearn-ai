@@ -13,7 +13,9 @@ const HeroScene = lazy(()=>import("./HeroScene.jsx"))
 const AmbientBG = lazy(()=>import("./AmbientBG.jsx"))
 const Dashboard = lazy(()=>import("./dashboard.jsx"))
 const StaticPage = lazy(()=>import("./pages.jsx"))
-import { usePage, useHash, resetToken } from "./route.js"
+import { usePage, useHash, resetToken, isAdminRoute } from "./route.js"
+import { FeedbackButton } from "./v30.jsx"
+const AdminPage = lazy(()=>import("./v30.jsx"))
 const ResetPassword = lazy(()=>import("./reset.jsx"))
 import { applyPerf, isLite } from "./perf.js"
 import { applyHinglish } from "./hinglish.js"
@@ -699,10 +701,13 @@ export default function App(){
       <CursorGlow/>
       {!ok && <StickyCta onAuth={()=>requestAuth(null)} />}
       <SoundToggle/>
+      <FeedbackButton/>
       {!online && <div className="offline-bar" role="status">📴 You're offline. Flashcards, notes, planner and sketch still work.</div>}
       <Nav onOpenApp={()=>setOk(true)} dark={dark} setDark={setDark} user={user} onMenu={()=>window.dispatchEvent(new Event("ml-menu"))} onAuth={()=>requestAuth(null)} onProfile={()=>setShowProfile(true)} landing={!ok} />
 
-      {rToken ? (
+      {isAdminRoute() ? (
+        <Suspense fallback={null}><AdminPage signedIn={!!user} /></Suspense>
+      ) : rToken ? (
         <Suspense fallback={null}><ResetPassword token={rToken} onDone={data=>{ handleAuthed(data) }} /></Suspense>
       ) : page ? (
         <Suspense fallback={null}><StaticPage page={page} /></Suspense>

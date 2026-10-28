@@ -86,16 +86,50 @@ export async function uploadPdfs(files, onProgress){
   }
   const form = new FormData()
   list.forEach(f=>form.append("files", f))
-  const res = await api.post("/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-    onUploadProgress: e=>{ if(onProgress && e.total) onProgress(Math.round(e.loaded / e.total * 100)) },
-  })
+  const say = (p, m)=>{ upStatus.msg = m || ""; try{ window.dispatchEvent(new Event("ml-upmsg")) }catch(e){}; if(onProgress) onProgress(Math.max(0, Math.min(100, Math.round(p)))) }
+  let data
+  try{
+    say(0, "Uploading")
+    const res = await api.post("/upload/async", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: e=>{ if(e.total) say(e.loaded / e.total * 25, "Uploading") },
+    })
+    const jid = res?.data?.job_id
+    if(!jid) throw new Error("The server did not start the upload.")
+    say(25, "Starting")
+    let fails = 0
+    for(let i = 0; i < 1200; i++){          // up to ~30 min
+      await new Promise(r=>setTimeout(r, i < 5 ? 700 : 1500))
+      let st
+      try{ st = (await api.get("/upload/job/" + jid, { silent: true })).data; fails = 0 }
+      catch(e){
+        if(e?.response?.status === 404) throw Object.assign(new Error("Upload was interrupted (the server restarted). Please upload again."), { response: { data: { detail: "Upload was interrupted (the server restarted). Please upload again." } } })
+        if(e?.response?.status === 401) throw e
+        if(++fails > 8) throw new Error("Lost connection to the server while processing. Please try again.")
+        continue
+      }
+      say(25 + st.pct * 0.75, st.msg)
+      if(st.done){
+        if(st.error) throw Object.assign(new Error(st.error), { response: { status: 400, data: { detail: st.error } } })
+        data = st.result; break
+      }
+    }
+    if(!data) throw new Error("Processing is taking too long. Try a smaller PDF.")
+  }catch(e){
+    if(e?.response?.status === 404 && !e?.response?.data?.detail?.includes?.("interrupted")){
+      // older backend without /upload/async: classic single request
+      const res = await api.post("/upload", form, { headers: { "Content-Type": "multipart/form-data" }, onUploadProgress: ev=>{ if(onProgress && ev.total) onProgress(Math.round(ev.loaded / ev.total * 100)) } })
+      data = res?.data
+    }else throw e
+  }
+  say(100, "Done")
   try{ window.dispatchEvent(new Event("ml-library")) }catch(e){}
-  return res?.data
+  return data
 }
+export const upStatus = { msg: "" }
 
 // ---------------- cloud sync (optional: needs the backend sync router) ----------------
-export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc"]
+export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done"]
 export const syncInfo = { status: "idle", at: 0 }
 function setSync(status){ syncInfo.status = status; syncInfo.at = Date.now(); window.dispatchEvent(new Event("ml-sync-status")) }
 export function readSyncData(){

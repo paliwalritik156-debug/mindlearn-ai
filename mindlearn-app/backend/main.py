@@ -24,10 +24,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
-import os, tempfile, json, re, logging, sqlite3, uuid, time, datetime
+import os, tempfile, json, re, logging, uuid, time, datetime, array, threading
 from dotenv import load_dotenv
 load_dotenv()
 
+import db
 from auth import get_current_user, init_db
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -42,6 +43,7 @@ from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 log = logging.getLogger("mindlearn")
 app = FastAPI(title="MindLearn API")
 init_db()
+db.init_schema()
 
 # allow_origins must be a specific list (not "*") because allow_credentials=True.
 _origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if o.strip()]
@@ -54,7 +56,7 @@ app.add_middleware(
 )
 
 CHROMA_DIR = "./chroma_db"
-MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")   # llama-3.3-70b-versatile was retired by Groq
 MAX_FILE_MB = 50
 MAX_DOCS = 20
 OCR_MAX_PAGES = 60
@@ -63,6 +65,7 @@ DAILY_LIMIT = int(os.getenv("DAILY_AI_LIMIT", "200"))
 LIB_DB = "library.db"
 # Each signed-in user gets their own isolated vector store, keyed by user id.
 vector_stores = {}
+_rebuild_lock = threading.Lock()
 
 # optional cloud sync (copy sync_router.py next to this file to enable)
 SYNC_ON = False
@@ -75,41 +78,37 @@ except ImportError:
 
 # ---------------- library + usage (small sqlite file next to main.py) ----------------
 def _db():
-    c = sqlite3.connect(LIB_DB, timeout=10)
-    c.execute("create table if not exists docs(id text primary key, user text, name text, chunks int, pages int, ocr int, created real)")
-    c.execute("create table if not exists active(user text primary key, ids text)")
-    c.execute("create table if not exists usage(user text, day text, n int, primary key(user, day))")
-    return c
+    return db.connect("main")
 
 def lib_list(uid):
-    c = _db(); rows = c.execute("select id, name, chunks, pages, ocr, created from docs where user=? order by created desc", (str(uid),)).fetchall(); c.close()
+    c = _db(); rows = c.execute('select id, name, chunks, pages, ocr, created from docs where "user"=? order by created desc', (str(uid),)).fetchall(); c.close()
     return [{"id": r[0], "name": r[1], "chunks": r[2], "pages": r[3], "ocr": bool(r[4]), "created": r[5]} for r in rows]
 
 def lib_add(uid, doc_id, name, chunks, pages, ocr):
     c = _db(); c.execute("insert into docs values(?,?,?,?,?,?,?)", (doc_id, str(uid), name, chunks, pages, ocr, time.time())); c.commit(); c.close()
 
 def lib_delete(uid, doc_id):
-    c = _db(); c.execute("delete from docs where id=? and user=?", (doc_id, str(uid))); c.commit(); c.close()
+    c = _db(); c.execute("delete from docs where id=? and \"user\"=?", (doc_id, str(uid))); c.commit(); c.close()
 
 def get_active(uid):
-    c = _db(); row = c.execute("select ids from active where user=?", (str(uid),)).fetchone(); c.close()
+    c = _db(); row = c.execute('select ids from active where "user"=?', (str(uid),)).fetchone(); c.close()
     have = {d["id"] for d in lib_list(uid)}
     ids = [i for i in (json.loads(row[0]) if row else []) if i in have]
     return ids
 
 def set_active(uid, ids):
-    c = _db(); c.execute("insert into active(user, ids) values(?,?) on conflict(user) do update set ids=excluded.ids", (str(uid), json.dumps(ids))); c.commit(); c.close()
+    c = _db(); c.execute('insert into active("user", ids) values(?,?) on conflict("user") do update set ids=excluded.ids', (str(uid), json.dumps(ids))); c.commit(); c.close()
 
 def usage_today(uid):
-    c = _db(); row = c.execute("select n from usage where user=? and day=?", (str(uid), datetime.date.today().isoformat())).fetchone(); c.close()
+    c = _db(); row = c.execute('select n from usage where "user"=? and day=?', (str(uid), datetime.date.today().isoformat())).fetchone(); c.close()
     return row[0] if row else 0
 
 def ai_guard(user: dict = Depends(get_current_user)):
     """Counts one AI request for this user today; refuses past the daily limit."""
     if DAILY_LIMIT > 0:
         c = _db(); day = datetime.date.today().isoformat()
-        c.execute("insert into usage(user, day, n) values(?,?,1) on conflict(user, day) do update set n=n+1", (str(user["id"]), day))
-        n = c.execute("select n from usage where user=? and day=?", (str(user["id"]), day)).fetchone()[0]
+        c.execute('insert into usage("user", day, n) values(?,?,1) on conflict("user", day) do update set n=usage.n+1', (str(user["id"]), day))
+        n = c.execute('select n from usage where "user"=? and day=?', (str(user["id"]), day)).fetchone()[0]
         c.commit(); c.close()
         if n > DAILY_LIMIT:
             raise HTTPException(status_code=429, detail=f"You've used today's {DAILY_LIMIT} free AI requests. They reset tomorrow.")
@@ -144,8 +143,16 @@ def get_store(user_id):
             if store._collection.count() > 0:
                 vector_stores[user_id] = store
                 return store
-        except Exception as e:  # corrupted index -> treat as "no PDF"
+        except Exception as e:  # corrupted index -> rebuild from the database copy below
             log.warning("could not reload index for %s: %s", user_id, e)
+    try:
+        with _rebuild_lock:
+            store = vector_stores.get(user_id) or _rebuild_store(user_id)
+        if store is not None and store._collection.count() > 0:
+            vector_stores[user_id] = store
+            return store
+    except Exception as e:
+        log.warning("could not rebuild index for %s: %s", user_id, e)
     return None
 
 def doc_filter(user_id):
@@ -291,7 +298,7 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "groq_key_set": bool(os.getenv("GROQ_API_KEY")), "sync": SYNC_ON}
+    return {"ok": True, "groq_key_set": bool(os.getenv("GROQ_API_KEY")), "sync": SYNC_ON, "db": "postgres" if db.IS_PG else "sqlite"}
 
 def purge_user_data(uid, email=None):
     """Delete everything stored for a user (called after account deletion)."""
@@ -300,16 +307,18 @@ def purge_user_data(uid, email=None):
     shutil.rmtree(_persist_dir(uid), ignore_errors=True)
     c = _db()
     try:
-        c.execute("delete from docs where user=?", (str(uid),))
-        c.execute("delete from active where user=?", (str(uid),))
-        c.execute("delete from usage where user=?", (str(uid),))
+        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads"):
+            c.execute(f'delete from {t} where "user"=?', (str(uid),))
         c.commit()
     finally:
         c.close()
     try:
-        s = sqlite3.connect("sync.db"); s.execute("delete from state where user in (?, ?)", (str(uid), str(email or ""))); s.commit(); s.close()
+        s = db.connect("sync"); s.execute('delete from state where "user" in (?, ?)', (str(uid), str(email or ""))); s.commit(); s.close()
     except Exception:
-        pass
+        log.warning("could not purge sync state", exc_info=True)
+
+from extras_router import build_extras_router
+app.include_router(build_extras_router(get_current_user))
 
 # login, register, forgot/reset password, change password, delete account
 if not os.getenv("MINDLEARN_SKIP_AUTH_ROUTER"):
@@ -343,6 +352,9 @@ def _delete_chunks(user_id, doc_id):
     if store is not None:
         try: store._collection.delete(where={"doc_id": doc_id})
         except Exception as e: log.warning("could not delete chunks: %s", e)
+    try:
+        c = _db(); c.execute("delete from chunks where doc_id=? and \"user\"=?", (doc_id, str(user_id))); c.commit(); c.close()
+    except Exception as e: log.warning("could not delete saved chunks: %s", e)
 
 @app.delete("/library/{doc_id}")
 def library_delete(doc_id: str, user: dict = Depends(get_current_user)):
@@ -357,19 +369,69 @@ def library_delete(doc_id: str, user: dict = Depends(get_current_user)):
     set_active(user["id"], act)
     return {"ok": True, "active": act}
 
-@app.post("/upload")
-async def upload_pdf(files: List[UploadFile] = File(...), user: dict = Depends(get_current_user)):
-    uid = user["id"]
+MAX_PAGES = int(os.getenv("MAX_PDF_PAGES", "500"))
+EMBED_BATCH = 32
+
+def _pack(vec): return array.array("f", vec).tobytes()
+def _unpack(b):
+    a = array.array("f"); a.frombytes(bytes(b)); return list(a)
+
+def _chunk_id(doc_id, i): return f"{doc_id}_{i}"
+
+def _open_store(uid):
+    return Chroma(persist_directory=_persist_dir(uid), embedding_function=get_embeddings())
+
+def _add_chunks(uid, doc_id, chunks, vecs):
+    """Add already-embedded chunks to the vector store AND keep a copy in the database
+    (so the index can be rebuilt after the server's disk is wiped)."""
+    store = vector_stores.get(uid) or get_store(uid) or _open_store(uid)
+    store._collection.add(
+        ids=[_chunk_id(doc_id, i) for i in range(len(chunks))],
+        embeddings=vecs,
+        documents=[c.page_content for c in chunks],
+        metadatas=[{k: v for k, v in c.metadata.items() if isinstance(v, (str, int, float, bool))} for c in chunks],
+    )
+    vector_stores[uid] = store
+    c = _db()
+    try:
+        for i, (ch, v) in enumerate(zip(chunks, vecs)):
+            meta = {k: v2 for k, v2 in ch.metadata.items() if isinstance(v2, (str, int, float, bool))}
+            c.execute("insert into chunks(doc_id, \"user\", idx, content, meta, emb) values(?,?,?,?,?,?)",
+                      (doc_id, str(uid), i, ch.page_content, json.dumps(meta), _pack(v)))
+        c.commit()
+    finally:
+        c.close()
+
+def _rebuild_store(uid):
+    """Re-create the vector index from the chunks saved in the database. No re-embedding needed."""
+    c = _db()
+    try:
+        rows = c.execute('select doc_id, idx, content, meta, emb from chunks where "user"=? order by doc_id, idx', (str(uid),)).fetchall()
+    finally:
+        c.close()
+    if not rows:
+        return None
+    store = _open_store(uid)
+    for i in range(0, len(rows), 200):
+        part = rows[i:i + 200]
+        store._collection.add(ids=[_chunk_id(r[0], r[1]) for r in part], embeddings=[_unpack(r[4]) for r in part],
+                              documents=[r[2] for r in part], metadatas=[json.loads(r[3]) for r in part])
+    log.info("rebuilt index for user %s from %d saved chunks", uid, len(rows))
+    return store
+
+def _process_upload(uid, items, progress=lambda pct, msg: None):
+    """items = [(filename, bytes)]. Parses, (OCRs), splits, embeds and stores. Raises HTTPException with a friendly message."""
     splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=100)
-    chunks_all = []; names = []; new_docs = []; ocr_total = 0; ocr_missing = False
+    prepared = []; ocr_total = 0; ocr_missing = False
     existing = {d["name"]: d["id"] for d in lib_list(uid)}
-    for file in files:
-        fname = file.filename or "document.pdf"
+    n = max(len(items), 1)
+    for fi, (fname, data) in enumerate(items):
+        base = fi * 100 / n; span = 100 / n
         if not fname.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail=f"{fname}: only PDF files are supported.")
-        data = await file.read()
         if len(data) > MAX_FILE_MB * 1024 * 1024:
             raise HTTPException(status_code=413, detail=f"{fname} is larger than {MAX_FILE_MB} MB.")
+        progress(base + span * 0.03, f"Reading {fname}")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(data); path = tmp.name
         try:
@@ -377,9 +439,12 @@ async def upload_pdf(files: List[UploadFile] = File(...), user: dict = Depends(g
                 pages = PyPDFLoader(path).load()
             except Exception:
                 raise HTTPException(status_code=400, detail=f"Couldn't read {fname}. Is it a valid PDF?")
+            if len(pages) > MAX_PAGES:
+                raise HTTPException(status_code=400, detail=f"{fname} has {len(pages)} pages; the limit is {MAX_PAGES}. Split it into smaller PDFs.")
             blank = [i for i, d in enumerate(pages) if not (d.page_content or "").strip()]
             ocr_n = 0
             if blank:
+                progress(base + span * 0.15, f"Reading scanned pages of {fname}")
                 got = ocr_pages(path, blank)
                 if got is None:
                     ocr_missing = True
@@ -396,23 +461,103 @@ async def upload_pdf(files: List[UploadFile] = File(...), user: dict = Depends(g
         if not chunks:
             hint = " Install OCR on the server (see README) to read scanned PDFs." if ocr_missing else ""
             raise HTTPException(status_code=400, detail=f"No readable text found in {fname}. It looks like a scanned PDF (images only).{hint}")
-        chunks_all.extend(chunks); names.append(fname); ocr_total += ocr_n
-        new_docs.append({"id": doc_id, "name": fname, "chunks": len(chunks), "pages": len(pages), "ocr": ocr_n})
+        prepared.append({"fname": fname, "doc_id": doc_id, "chunks": chunks, "pages": len(pages), "ocr": ocr_n, "base": base, "span": span})
+        ocr_total += ocr_n
     # library size check (re-uploading the same file name replaces it, so it doesn't count)
-    replaced = [existing[n] for n in names if n in existing]
-    if len(lib_list(uid)) - len(replaced) + len(new_docs) > MAX_DOCS:
+    names = [p["fname"] for p in prepared]
+    replaced = [existing[x] for x in names if x in existing]
+    if len(lib_list(uid)) - len(replaced) + len(prepared) > MAX_DOCS:
         raise HTTPException(status_code=400, detail=f"Your library is full ({MAX_DOCS} documents). Delete one first.")
     for old_id in replaced:
         _delete_chunks(uid, old_id); lib_delete(uid, old_id)
-    store = get_store(uid)
-    if store is None:
-        vector_stores[uid] = Chroma.from_documents(chunks_all, get_embeddings(), persist_directory=_persist_dir(uid))
-    else:
-        store.add_documents(chunks_all)
-    for d in new_docs:
-        lib_add(uid, d["id"], d["name"], d["chunks"], d["pages"], d["ocr"])
+    emb = get_embeddings(); new_docs = []; total = 0
+    for p in prepared:
+        chunks = p["chunks"]; vecs = []
+        for i in range(0, len(chunks), EMBED_BATCH):
+            vecs.extend(emb.embed_documents([c.page_content for c in chunks[i:i + EMBED_BATCH]]))
+            progress(p["base"] + p["span"] * (0.25 + 0.65 * len(vecs) / len(chunks)), f"Understanding {p['fname']} ({len(vecs)}/{len(chunks)})")
+        progress(p["base"] + p["span"] * 0.93, "Saving")
+        _add_chunks(uid, p["doc_id"], chunks, vecs)
+        lib_add(uid, p["doc_id"], p["fname"], len(chunks), p["pages"], p["ocr"])
+        new_docs.append({"id": p["doc_id"], "name": p["fname"], "chunks": len(chunks), "pages": p["pages"], "ocr": p["ocr"]})
+        total += len(chunks)
     set_active(uid, [d["id"] for d in new_docs])      # a fresh upload becomes the active document(s)
-    return {"message": "Files processed", "files": names, "chunks": len(chunks_all), "docs": new_docs, "ocr_pages": ocr_total}
+    progress(100, "Done")
+    return {"message": "Files processed", "files": names, "chunks": total, "docs": new_docs, "ocr_pages": ocr_total}
+
+def _log_upload(uid, name, pages, chunks, ok, seconds, error=""):
+    try:
+        c = _db()
+        c.execute('insert into uploads("user", name, pages, chunks, ok, seconds, error, created) values(?,?,?,?,?,?,?,?)',
+                  (str(uid), name[:200], pages, chunks, 1 if ok else 0, seconds, error[:300], time.time()))
+        c.commit(); c.close()
+    except Exception:
+        log.warning("could not log upload", exc_info=True)
+
+async def _read_files(files):
+    out = []
+    for f in files:
+        out.append((f.filename or "document.pdf", await f.read()))
+    return out
+
+def _run_logged(uid, items, progress=lambda p, m: None):
+    t0 = time.time(); label = ", ".join(n for n, _ in items)
+    try:
+        res = _process_upload(uid, items, progress)
+        _log_upload(uid, label, sum(d["pages"] for d in res["docs"]), res["chunks"], True, time.time() - t0)
+        return res
+    except HTTPException as e:
+        _log_upload(uid, label, 0, 0, False, time.time() - t0, str(e.detail)); raise
+    except Exception as e:
+        _log_upload(uid, label, 0, 0, False, time.time() - t0, repr(e)); raise
+
+@app.post("/upload")
+async def upload_pdf(files: List[UploadFile] = File(...), user: dict = Depends(get_current_user)):
+    """Synchronous upload (used by tests / old clients). The web app uses /upload/async."""
+    items = await _read_files(files)
+    return _run_logged(user["id"], items)
+
+JOBS = {}          # job_id -> dict(user, pct, msg, done, error, result, t)
+_jobs_lock = threading.Lock()
+
+def _gc_jobs():
+    cut = time.time() - 3600
+    for k in [k for k, v in JOBS.items() if v["t"] < cut]:
+        JOBS.pop(k, None)
+
+@app.post("/upload/async")
+async def upload_async(files: List[UploadFile] = File(...), user: dict = Depends(get_current_user)):
+    """Returns at once with a job id; poll GET /upload/job/{id} for progress."""
+    items = await _read_files(files)
+    uid = user["id"]
+    with _jobs_lock:
+        _gc_jobs()
+        if any(j["user"] == uid and not j["done"] for j in JOBS.values()):
+            raise HTTPException(status_code=409, detail="An upload is still being processed. Please wait for it to finish.")
+        jid = uuid.uuid4().hex
+        JOBS[jid] = {"user": uid, "pct": 1, "msg": "Starting", "done": False, "error": None, "result": None, "t": time.time()}
+    def progress(p, m):
+        JOBS[jid].update(pct=int(min(99, p)), msg=m, t=time.time())
+    def run():
+        try:
+            JOBS[jid]["result"] = _run_logged(uid, items, progress)
+            JOBS[jid].update(pct=100, msg="Done")
+        except HTTPException as e:
+            JOBS[jid]["error"] = str(e.detail)
+        except Exception:
+            log.exception("upload job failed")
+            JOBS[jid]["error"] = "Something went wrong while processing the PDF. Please try again (or a smaller file)."
+        finally:
+            JOBS[jid]["done"] = True; JOBS[jid]["t"] = time.time()
+    threading.Thread(target=run, daemon=True).start()
+    return {"job_id": jid}
+
+@app.get("/upload/job/{job_id}")
+def upload_job(job_id: str, user: dict = Depends(get_current_user)):
+    j = JOBS.get(job_id)
+    if not j or j["user"] != user["id"]:
+        raise HTTPException(status_code=404, detail="Upload not found (the server may have restarted). Please upload again.")
+    return {"pct": j["pct"], "msg": j["msg"], "done": j["done"], "error": j["error"], "result": j["result"]}
 
 def _history_messages(req):
     msgs = []

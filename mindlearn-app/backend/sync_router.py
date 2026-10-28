@@ -11,18 +11,18 @@ Use in main.py, after `app = FastAPI(...)`:
 user (a dict with "email"/"id", or an object with .email/.id). Data is stored in its own
 sqlite file (sync.db), separate from your users DB.
 """
-import json, sqlite3, time
+import json, time
+import db
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 ALLOWED = {"ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_reading","ml_achievements",
-           "ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc"}
+           "ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_hl","ml_time","ml_reminder","ml_spot_done","ml_perf"}
 MAX_BYTES = 2_000_000
-DB = "sync.db"
 
 def _db():
-    c = sqlite3.connect(DB)
-    c.execute("create table if not exists state(user text primary key, data text, updated_at real)")
+    c = db.connect("sync")
+    c.execute(db.ddl('create table if not exists state("user" text primary key, data text, updated_at real)'))
     return c
 
 def _uid(u):
@@ -40,7 +40,7 @@ def build_router(get_current_user):
 
     @r.get("/sync/state")
     def get_state(user=Depends(get_current_user)):
-        c = _db(); row = c.execute("select data, updated_at from state where user=?", (_uid(user),)).fetchone(); c.close()
+        c = _db(); row = c.execute('select data, updated_at from state where "user"=?', (_uid(user),)).fetchone(); c.close()
         if not row: return {"data": None, "updated_at": 0}
         return {"data": json.loads(row[0]), "updated_at": row[1]}
 
@@ -50,7 +50,7 @@ def build_router(get_current_user):
         raw = json.dumps(clean)
         if len(raw) > MAX_BYTES: raise HTTPException(413, "Data too large")
         c = _db()
-        c.execute("insert into state(user,data,updated_at) values(?,?,?) on conflict(user) do update set data=excluded.data, updated_at=excluded.updated_at",
+        c.execute('insert into state("user",data,updated_at) values(?,?,?) on conflict("user") do update set data=excluded.data, updated_at=excluded.updated_at',
                   (_uid(user), raw, body.updated_at or time.time()))
         c.commit(); c.close()
         return {"ok": True}

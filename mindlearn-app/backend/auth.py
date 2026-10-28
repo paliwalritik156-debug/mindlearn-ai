@@ -12,7 +12,7 @@ import logging
 import os
 import re
 import secrets
-import sqlite3
+import db
 import threading
 import time
 from contextlib import closing
@@ -25,7 +25,6 @@ from jose import JWTError, jwt
 
 log = logging.getLogger("mindlearn.auth")
 HERE = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(HERE, "mindlearn.db")
 
 
 def _load_secret() -> str:
@@ -115,41 +114,39 @@ def validate_new_password(password: str):
 
 # ---------------------------------------------------------------- database
 def _conn():
-    c = sqlite3.connect(DB_PATH, timeout=10)
-    c.row_factory = sqlite3.Row
-    return c
+    return db.connect("users")
 
 
 def init_db():
     with closing(_conn()) as c:
-        c.execute("""
+        c.execute(db.ddl("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL
-            )""")
-        c.execute("""
+            )"""))
+        c.execute(db.ddl("""
             CREATE TABLE IF NOT EXISTS password_resets (
                 token_hash TEXT PRIMARY KEY,
                 user_id INTEGER NOT NULL,
                 expires REAL NOT NULL,
                 used INTEGER NOT NULL DEFAULT 0
-            )""")
+            )"""))
         c.commit()
 
 
 def get_user_by_email(email: str):
     with closing(_conn()) as c:
         row = c.execute("SELECT * FROM users WHERE email = ?", ((email or "").lower().strip(),)).fetchone()
-    return dict(row) if row else None
+    return dict(zip(row.keys(), row)) if row else None
 
 
 def get_user_by_id(user_id: int):
     with closing(_conn()) as c:
         row = c.execute("SELECT id, name, email, password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
-    return dict(row) if row else None
+    return dict(zip(row.keys(), row)) if row else None
 
 
 def _pv(password_hash: str) -> str:
@@ -169,13 +166,12 @@ def create_user(name: str, email: str, password: str):
     hashed = hash_password(password)
     try:
         with closing(_conn()) as c:
-            cur = c.execute(
+            user_id = c.insert_id(
                 "INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
                 (name, email, hashed, _now().isoformat()),
             )
             c.commit()
-            user_id = cur.lastrowid
-    except sqlite3.IntegrityError:
+    except db.IntegrityError:
         raise HTTPException(status_code=400, detail="An account with this email already exists")
     return {"id": user_id, "name": name, "email": email}
 

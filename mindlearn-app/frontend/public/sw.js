@@ -1,5 +1,5 @@
 // Offline support: precache the built app (via precache.json), cache-first for static files, network-first for pages. API calls are never touched.
-const CACHE = "mindlearn-v29"
+const CACHE = "mindlearn-v30"
 self.addEventListener("install", e=>{
   self.skipWaiting()
   e.waitUntil((async()=>{
