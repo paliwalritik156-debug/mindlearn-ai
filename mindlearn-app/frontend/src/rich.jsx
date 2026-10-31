@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 
 /* Small, dependency-free Markdown renderer (headings, bold/italic, code, lists, tables, quotes, links, math).
-   Everything is built as React elements, so there is no innerHTML and nothing to sanitise. */
+   Built as React elements. The only innerHTML is KaTeX output (trust:false, escapes its input). */
 
 let katexState = "idle", katexCbs = []
 function loadKatex(){
@@ -18,14 +18,21 @@ function loadKatex(){
   })
 }
 function Math_({ tex, block }){
-  const ref = useRef(null)
-  const [done, setDone] = useState(false)
+  // KaTeX must not write into a node whose children React manages (that crashed with
+  // "The object can not be found here"). We ask for an HTML string and let React insert it.
+  const [html, setHtml] = useState(null)
   useEffect(()=>{
     let dead = false
-    loadKatex().then(k=>{ if(dead || !k || !ref.current) return; try{ k.render(tex, ref.current, { displayMode: !!block, throwOnError: false }); setDone(true) }catch(e){} })
+    setHtml(null)
+    loadKatex().then(k=>{
+      if(dead || !k) return
+      try{ setHtml(k.renderToString(tex, { displayMode: !!block, throwOnError: false, trust: false })) }catch(e){ /* keep plain text */ }
+    })
     return ()=>{ dead = true }
   },[tex, block])
-  return <span ref={ref} className={"rich-math" + (block ? " block" : "")}>{done ? null : <code>{block ? "$$" + tex + "$$" : "$" + tex + "$"}</code>}</span>
+  const cls = "rich-math" + (block ? " block" : "")
+  if(html) return <span className={cls} dangerouslySetInnerHTML={{ __html: html }} />
+  return <span className={cls}><code>{block ? "$$" + tex + "$$" : "$" + tex + "$"}</code></span>
 }
 
 const safeUrl = u=>/^https?:\/\//i.test(u) ? u : null
