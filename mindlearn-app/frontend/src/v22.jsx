@@ -232,7 +232,7 @@ export function TodayCenter({ activity }){
 /* ---------------- voice commands ---------------- */
 const VOICE_MAP = [
   [/flash ?cards?|cards/, "flashcards"], [/notes?/, "notes"], [/quiz|test/, "quiz"], [/chat|ask|tutor/, "chat"], [/plan|planner|schedule/, "planner"],
-  [/setting/, "settings"], [/library/, "library"], [/report/, "report"], [/exam|mock/, "exam"], [/weak/, "weakspots"], [/pomodoro|timer/, "pomodoro"],
+  [/setting/, "settings"], [/library/, "library"], [/report/, "report"], [/pyq|past paper|previous year|old paper/, "pyq"], [/exam|mock/, "exam"], [/weak/, "weakspots"], [/pomodoro|timer/, "pomodoro"],
   [/home|overview|dashboard/, "Home"], [/map/, "map"], [/revi[sz]e|review|srs/, "srs"],
 ]
 export function VoiceCommand({ onAction }){

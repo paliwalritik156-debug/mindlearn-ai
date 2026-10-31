@@ -525,39 +525,187 @@ def _gc_jobs():
     for k in [k for k, v in JOBS.items() if v["t"] < cut]:
         JOBS.pop(k, None)
 
-@app.post("/upload/async")
-async def upload_async(files: List[UploadFile] = File(...), user: dict = Depends(get_current_user)):
-    """Returns at once with a job id; poll GET /upload/job/{id} for progress."""
-    items = await _read_files(files)
-    uid = user["id"]
+def _start_job(uid, fn, busy_msg):
+    """Run fn(progress) in a background thread; the web app polls GET /jobs/{id}."""
     with _jobs_lock:
         _gc_jobs()
         if any(j["user"] == uid and not j["done"] for j in JOBS.values()):
-            raise HTTPException(status_code=409, detail="An upload is still being processed. Please wait for it to finish.")
+            raise HTTPException(status_code=409, detail=busy_msg)
         jid = uuid.uuid4().hex
         JOBS[jid] = {"user": uid, "pct": 1, "msg": "Starting", "done": False, "error": None, "result": None, "t": time.time()}
     def progress(p, m):
         JOBS[jid].update(pct=int(min(99, p)), msg=m, t=time.time())
     def run():
         try:
-            JOBS[jid]["result"] = _run_logged(uid, items, progress)
+            JOBS[jid]["result"] = fn(progress)
             JOBS[jid].update(pct=100, msg="Done")
         except HTTPException as e:
             JOBS[jid]["error"] = str(e.detail)
         except Exception:
-            log.exception("upload job failed")
-            JOBS[jid]["error"] = "Something went wrong while processing the PDF. Please try again (or a smaller file)."
+            log.exception("background job failed")
+            JOBS[jid]["error"] = "Something went wrong. Please try again (or with a smaller file)."
         finally:
             JOBS[jid]["done"] = True; JOBS[jid]["t"] = time.time()
     threading.Thread(target=run, daemon=True).start()
+    return jid
+
+@app.post("/upload/async")
+async def upload_async(files: List[UploadFile] = File(...), user: dict = Depends(get_current_user)):
+    """Returns at once with a job id; poll GET /upload/job/{id} for progress."""
+    items = await _read_files(files)
+    uid = user["id"]
+    jid = _start_job(uid, lambda progress: _run_logged(uid, items, progress), "An upload is still being processed. Please wait for it to finish.")
     return {"job_id": jid}
 
+@app.get("/jobs/{job_id}")
 @app.get("/upload/job/{job_id}")
 def upload_job(job_id: str, user: dict = Depends(get_current_user)):
     j = JOBS.get(job_id)
     if not j or j["user"] != user["id"]:
-        raise HTTPException(status_code=404, detail="Upload not found (the server may have restarted). Please upload again.")
+        raise HTTPException(status_code=404, detail="Job not found (the server may have restarted). Please try again.")
     return {"pct": j["pct"], "msg": j["msg"], "done": j["done"], "error": j["error"], "result": j["result"]}
+
+# ---------------- PYQ / past-paper mode ----------------
+PYQ_MAX_PAGES = int(os.getenv("PYQ_MAX_PAGES", "12"))     # pages read per extraction (keeps it fast on the free server)
+PYQ_MAX_Q = 40
+
+class PyqExtractRequest(BaseModel):
+    doc_id: Optional[str] = None
+    page_from: int = 1
+    page_to: int = 0            # 0 = up to PYQ_MAX_PAGES pages from page_from
+    exam: str = "general"
+
+class PyqSolveRequest(BaseModel):
+    question: str
+    options: List[str] = []
+    user_answer: str = ""
+    official_answer: str = ""
+    exam: str = "general"
+    language: str = "English"
+
+def _doc_pages(uid, doc_id):
+    """{page_number(1-based): text} for one document, from the saved chunks (falls back to the vector index)."""
+    pages = {}
+    def add(content, meta):
+        try: p = int(meta.get("page")) + 1
+        except (TypeError, ValueError): return
+        pages[p] = (pages.get(p, "") + "\n" + (content or "")).strip()
+    c = _db()
+    try:
+        for r in c.execute('select content, meta from chunks where doc_id=? and "user"=? order by idx', (doc_id, str(uid))).fetchall():
+            add(r[0], json.loads(r[1] or "{}"))
+    finally:
+        c.close()
+    if not pages:
+        store = get_store(uid)
+        if store is not None:
+            try:
+                got = store._collection.get(where={"doc_id": doc_id}, include=["documents", "metadatas"])
+                for t, m in zip(got.get("documents") or [], got.get("metadatas") or []):
+                    add(t, m or {})
+            except Exception as e:
+                log.warning("pyq: could not read pages: %s", e)
+    return pages
+
+def _pyq_windows(pages, lo, hi, max_chars=6500):
+    out, cur, size = [], [], 0
+    for p in sorted(k for k in pages if lo <= k <= hi):
+        txt = f"[Page {p}]\n{pages[p]}"
+        if cur and size + len(txt) > max_chars:
+            out.append("\n\n".join(cur)); cur, size = [], 0
+        cur.append(txt[:max_chars]); size += len(txt)
+    if cur: out.append("\n\n".join(cur))
+    return out
+
+PYQ_PROMPT = (
+    "You are extracting multiple-choice questions from the text of a past exam paper ({exam}).\n"
+    "Extract every COMPLETE multiple-choice question that appears below, exactly as printed. Do not invent, rewrite or solve anything. "
+    "Skip instructions, headers, page numbers, and questions whose text or options are cut off or have fewer than 2 options. "
+    "If the paper itself prints the correct answer for a question right there, copy it into \"answer\" exactly as one of the options; otherwise use null.\n"
+    'Return ONLY JSON: {{"questions":[{{"number":"12","question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"answer":null,"topic":"2-3 word topic","page":3}}]}}\n'
+    "Text (pages are marked like [Page 3]):\n{context}"
+)
+
+def _clean_pyq(raw, seen):
+    if isinstance(raw, dict):
+        raw = raw.get("questions") or []
+    out = []
+    for q in raw if isinstance(raw, list) else []:
+        if not isinstance(q, dict): continue
+        text = str(q.get("question") or "").strip()
+        opts = [str(o).strip() for o in (q.get("options") or []) if str(o).strip()]
+        if len(text) < 8 or not (2 <= len(opts) <= 6): continue
+        key = re.sub(r"\W+", " ", text.lower())[:120]
+        if key in seen: continue
+        seen.add(key)
+        ans = q.get("answer"); ans = str(ans).strip() if ans else None
+        if ans and ans not in opts:
+            m = next((o for o in opts if o[:1].upper() == ans[:1].upper() and len(ans) <= 3), None)
+            ans = m
+        try: page = int(q.get("page"))
+        except (TypeError, ValueError): page = None
+        out.append({"number": str(q.get("number") or ""), "question": text[:1200], "options": [o[:400] for o in opts], "answer": ans,
+                    "topic": str(q.get("topic") or "General").strip()[:40] or "General", "page": page})
+    return out
+
+def _pyq_extract(uid, req, progress):
+    docs = lib_list(uid)
+    ids = {d["id"] for d in docs}
+    doc_id = req.doc_id if req.doc_id in ids else (get_active(uid) or [None])[0]
+    if not doc_id:
+        raise HTTPException(status_code=400, detail="Upload a past-paper PDF first.")
+    name = next((d["name"] for d in docs if d["id"] == doc_id), "paper")
+    progress(3, "Reading the paper")
+    pages = _doc_pages(uid, doc_id)
+    if not pages:
+        raise HTTPException(status_code=400, detail="This document has no saved text. Please upload it again.")
+    lo = max(1, req.page_from); hi = req.page_to if req.page_to >= lo else lo + PYQ_MAX_PAGES - 1
+    hi = min(hi, lo + PYQ_MAX_PAGES - 1)
+    wins = _pyq_windows(pages, lo, hi)
+    if not wins:
+        raise HTTPException(status_code=400, detail=f"No text on pages {lo}-{hi}. This PDF has {max(pages)} pages.")
+    seen, found = set(), []
+    for i, w in enumerate(wins):
+        progress(8 + 88 * i / len(wins), f"Finding questions ({i + 1}/{len(wins)})")
+        try:
+            raw = llm_json(PYQ_PROMPT, exam=req.exam or "general", context=w)
+        except HTTPException:
+            continue
+        found.extend(_clean_pyq(raw, seen))
+        if len(found) >= PYQ_MAX_Q: break
+    if not found:
+        raise HTTPException(status_code=422, detail=f"Couldn't find multiple-choice questions on pages {lo}-{hi}. Try other pages, or check that the PDF is a question paper (not just a key).")
+    for i, q in enumerate(found[:PYQ_MAX_Q]): q["id"] = f"{doc_id}-{lo}-{i}"
+    return {"doc_id": doc_id, "name": name, "page_from": lo, "page_to": hi, "total_pages": max(pages), "questions": found[:PYQ_MAX_Q]}
+
+@app.post("/pyq/extract")
+def pyq_extract(req: PyqExtractRequest, user: dict = Depends(ai_guard)):
+    uid = user["id"]
+    jid = _start_job(uid, lambda progress: _pyq_extract(uid, req, progress), "Another task is still running. Please wait for it to finish.")
+    return {"job_id": jid}
+
+@app.post("/pyq/solve")
+def pyq_solve(req: PyqSolveRequest, user: dict = Depends(ai_guard)):
+    q = (req.question or "").strip()
+    if len(q) < 5:
+        raise HTTPException(status_code=400, detail="Question is empty.")
+    opts = "\n".join(req.options or [])
+    known = f'The paper\'s official answer is: {req.official_answer}. Trust it and explain why.' if req.official_answer else "No official answer is available: solve it yourself carefully and say how sure you are."
+    mine = f'The student chose: {req.user_answer}.' if req.user_answer else "The student has not chosen an answer."
+    raw = llm_json(
+        'You are a patient {exam} tutor. Solve this exam question step by step for a student.\n'
+        'Question: {q}\nOptions:\n{opts}\n{known}\n{mine}\n'
+        'Return ONLY JSON: {{"correct_option":"exactly one of the options","steps":["step 1","step 2"],"concept":"the idea being tested, one sentence",'
+        '"shortcut":"a quick exam trick or empty string","why_wrong":"if the student chose a wrong option, why it is wrong, else empty string",'
+        '"topic":"2-3 word topic","confidence":"high|medium|low"}}\nLanguage: {lang}. Keep each step short.',
+        exam=req.exam or "exam", q=q, opts=opts, known=known, mine=mine, lang=req.language)
+    if not isinstance(raw, dict) or not raw.get("steps"):
+        raise HTTPException(status_code=502, detail="Couldn't solve this one. Please try again.")
+    raw["steps"] = [str(x) for x in raw["steps"]][:12]
+    if req.official_answer:
+        raw["correct_option"] = req.official_answer
+        raw["confidence"] = "high"
+    return raw
 
 def _history_messages(req):
     msgs = []

@@ -1,5 +1,6 @@
 import { lazy, useEffect, useMemo, useRef, useState } from "react"
 import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
+import PyqTab from "./pyq.jsx"
 import { KnowledgeMapTab, WeakSpotsTab, WeakCard, ExamTab, VoiceTab, SourceChip } from "./features.jsx"
 import { savePdfs } from "./pdfstore.js"
 import { V24Host, SwipeTab, ListenTab, SketchTab } from "./v24.jsx"
@@ -1032,7 +1033,7 @@ function getTabComponent(key){
     typing: TypingTestTab, mnemonics: MnemonicsTab, difficulty: DifficultyRater, srs: SpacedRepetitionTab,
     debate: SelfDebate, reading: ReadingTrackerTab, multipdf: MultiPDFChat, codegen: CodeGeneratorTab,
     debugger: CodeDebuggerTab, reviewer: CodeReviewerTab, algorithm: AlgorithmVisualizerTab, codequiz: CodeQuizTab,
-    knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
+    pyq: PyqTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
   }
   return map[key] || (()=> <div className="card">Coming soon.</div>)
 }

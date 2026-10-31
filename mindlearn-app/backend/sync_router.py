@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 ALLOWED = {"ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_reading","ml_achievements",
-           "ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_hl","ml_time","ml_reminder","ml_spot_done","ml_perf"}
+           "ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_hl","ml_time","ml_reminder","ml_spot_done","ml_perf","ml_pyq"}
 MAX_BYTES = 2_000_000
 
 def _db():

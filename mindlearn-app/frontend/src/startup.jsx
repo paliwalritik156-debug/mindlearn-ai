@@ -500,9 +500,9 @@ export function Typed({ text, onTick }){
    v21: personalization + recap
    ============================================================ */
 export const GOALS = {
-  neet:    { label:"NEET",              icon:"🧬", tools:["exam","weakspots","quiz","flashcards"], exam:"neet" },
-  jee:     { label:"JEE",               icon:"📐", tools:["exam","weakspots","quiz","studyplan"], exam:"jee" },
-  upsc:    { label:"UPSC",              icon:"🏛️", tools:["exam","essay","notes","studyplan"], exam:"upsc" },
+  neet:    { label:"NEET",              icon:"🧬", tools:["pyq","exam","weakspots","quiz"], exam:"neet" },
+  jee:     { label:"JEE",               icon:"📐", tools:["pyq","exam","weakspots","quiz"], exam:"jee" },
+  upsc:    { label:"UPSC",              icon:"🏛️", tools:["pyq","exam","essay","notes"], exam:"upsc" },
   college: { label:"College / University", icon:"🎓", tools:["notes","flashcards","quiz","chat"], exam:"general" },
   school:  { label:"School boards",     icon:"📚", tools:["notes","flashcards","quiz","eli5"], exam:"general" },
   coding:  { label:"Coding / Skills",   icon:"💻", tools:["codegen","debugger","reviewer","codequiz"], exam:"general" },

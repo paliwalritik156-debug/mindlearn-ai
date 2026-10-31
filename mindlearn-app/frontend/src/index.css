@@ -1742,3 +1742,21 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
 .ad-l{ font-size:12px; color:var(--text-dim); margin-top:2px; }
 .ad-row{ margin:8px 0; font-size:14px; } .ad-t{ color:var(--text-dim); font-size:12px; } .ad-empty{ color:var(--text-dim); }
 .ad-pre{ margin:6px 0 0; font-size:11.5px; color:var(--text-dim); white-space:pre-wrap; word-break:break-all; max-height:90px; overflow:auto; }
+
+/* ---- v30.2: PYQ practice ---- */
+.pyq-note{ color:var(--text-dim); font-size:14px; line-height:1.55; margin:6px 0 12px } .pyq-note.small{ font-size:12.5px }
+.pyq-form{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); align-items:end } .pyq-form label{ display:grid; gap:4px; font-size:12.5px; color:var(--text-dim) }
+.pyq-empty,.pyq-err{ margin:12px 0; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); background:var(--card) } .pyq-err{ border-color:#f87171; color:#fca5a5 }
+.pyq-prog{ margin:12px 0; font-size:13px; color:var(--text-dim) } .pyq-prog>div{ height:8px; border-radius:99px; background:var(--card-border); overflow:hidden; margin-bottom:5px } .pyq-prog i{ display:block; height:100%; background:linear-gradient(90deg,var(--v),var(--cy)); transition:width .4s }
+.pyq-head{ display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap }
+.pyq-nav{ display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 }
+.pyq-n{ min-width:34px; height:34px; border-radius:10px; border:1px solid var(--card-border); background:transparent; color:var(--text); cursor:pointer; font-size:13px }
+.pyq-n.cur{ outline:2px solid var(--v) } .pyq-n.ok{ background:rgba(52,211,153,.25) } .pyq-n.bad{ background:rgba(248,113,113,.25) } .pyq-n.pick{ background:rgba(var(--v-rgb),.25) }
+.pyq-meta{ font-size:12px; color:var(--text-dim); margin-bottom:6px } .pyq-text{ font-size:16px; line-height:1.6; white-space:pre-wrap; margin-bottom:12px }
+.pyq-opts{ display:grid; gap:8px } .pyq-o{ text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); background:var(--bg2); color:var(--text); cursor:pointer; font-size:14.5px; line-height:1.45 }
+.pyq-o:hover:not(:disabled){ border-color:var(--v) } .pyq-o.picked{ border-color:var(--v); background:rgba(var(--v-rgb),.16) } .pyq-opts .pyq-o.right, .pyq-opts .pyq-o.right:hover{ border-color:#34d399; background:rgba(52,211,153,.18) } .pyq-opts .pyq-o.wrong, .pyq-opts .pyq-o.wrong:hover{ border-color:#f87171; background:rgba(248,113,113,.16) }
+.pyq-res{ margin-top:10px; font-size:14px } .pyq-res.ok{ color:#34d399 } .pyq-res.bad{ color:#f87171 }
+.pyq-acts{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px }
+.pyq-sol{ margin-top:14px; padding:14px; border-radius:14px; border:1px solid var(--card-border); background:var(--card); font-size:14.5px; line-height:1.6 } .pyq-sol ol{ margin:8px 0 8px 20px; padding:0 } .pyq-sol p{ margin:6px 0 }
+.pyq-conf{ font-size:11.5px; padding:2px 8px; border-radius:99px; border:1px solid var(--card-border); margin-left:6px; color:var(--text-dim) } .pyq-conf.low{ color:#f59e0b; border-color:#f59e0b }
+.pyq-sum{ margin-top:14px; padding:14px; border-radius:14px; border:1px solid var(--v); background:rgba(var(--v-rgb),.1) } .pyq-sum h4{ margin:0 0 6px }

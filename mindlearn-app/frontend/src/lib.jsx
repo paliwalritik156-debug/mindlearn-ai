@@ -129,7 +129,7 @@ export async function uploadPdfs(files, onProgress){
 export const upStatus = { msg: "" }
 
 // ---------------- cloud sync (optional: needs the backend sync router) ----------------
-export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done"]
+export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done","ml_pyq"]
 export const syncInfo = { status: "idle", at: 0 }
 function setSync(status){ syncInfo.status = status; syncInfo.at = Date.now(); window.dispatchEvent(new Event("ml-sync-status")) }
 export function readSyncData(){
@@ -551,6 +551,7 @@ export const FUN_META = {
   reviewer:    { title:"Code Reviewer", tag:"The honest teammate everyone needs.", desc:"Reviews code for style, bugs, and best practices.", tips:["Ask for a severity ranking if the feedback list is long.","Apply one suggestion at a time, not all at once.","Use it before submitting assignments, not after grading."] },
   algorithm:   { title:"Algorithm Visualizer", tag:"Watch the logic, don't just read it.", desc:"Explains an algorithm step-by-step in plain language.", tips:["Ask for the time complexity if it's not mentioned.","Trace through a tiny example by hand alongside the explanation.","Great prep for whiteboard-style interview questions."] },
   knowledge:   { title:"3D Knowledge Map", tag:"Your PDF as a galaxy of ideas.", desc:"Turns the main concepts in your document into an interactive 3D map. Drag to rotate, click any idea to explain it, quiz yourself or make flashcards.", tips:["Drag to orbit, scroll or pinch to zoom.","Click a concept, then use Explain, Quiz me or Flashcards.","Rebuild the map after uploading a new PDF."] },
+  pyq:         { title:"PYQ Practice", tag:"Past papers, but with a tutor beside you.", desc:"Upload a real past paper. MindLearn pulls out its multiple-choice questions, lets you attempt them and explains each answer step by step.", tips:["Upload the question paper itself, not just the answer key.","It reads 12 pages at a time; tap 'Read next pages' for more.","Wrong answers appear in your Weak-Spot Radar."] },
   weakspots:   { title:"Weak-Spot Radar", tag:"Know exactly where you slip.", desc:"Tracks which topics you get wrong across quizzes and exams, shows them on a radar, and builds a practice quiz from your weakest topics.", tips:["Take a few quizzes first so there is data to analyse.","Topics are auto-detected from each question.","Practice weak spots a little every day."] },
   exam:        { title:"Exam Simulator", tag:"A real paper, a real clock.", desc:"Generates a timed paper from your PDF with negative marking, a question navigator and a full report at the end.", tips:["Pick the style closest to your exam.","Mark tricky questions for review and come back to them.","Read the report: topic breakdown shows what to revise."] },
   swipe:       { title:"Swipe Cards", tag:"Review flashcards Tinder-style.", desc:"Swipe right when you remember, left when you don't. Your review schedule updates automatically.", tips:["Tap the card to flip it.","Use ← → and Space on a keyboard.","Cards you forget come back tomorrow."] },
@@ -571,7 +572,7 @@ export const SIDEBAR_GROUPS = [
     ["chat","💬"],["notes","📝"],["flashcards","🗂️"],["eli5","🧸"],["map","🕸️"],["multipdf","📚"],["mnemonics","🧠"],["bookmarks","🔖"],
   ]},
   { label:"Practice", items:[
-    ["quiz","🎯"],["vocabquiz","🔤"],["srs","🔁"],["interview","🎤"],["debate","⚖️"],["difficulty","📊"],["typing","⌨️"],
+    ["quiz","🎯"],["pyq","📜"],["vocabquiz","🔤"],["srs","🔁"],["interview","🎤"],["debate","⚖️"],["difficulty","📊"],["typing","⌨️"],
   ]},
   { label:"Code", items:[
     ["codegen","🤖"],["debugger","🐞"],["reviewer","🔍"],["algorithm","📈"],["codequiz","💻"],

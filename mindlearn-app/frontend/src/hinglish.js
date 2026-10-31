@@ -17,7 +17,7 @@ const T = {
   multipdf:["Multi-PDF Chat","Ek baatcheet, saari readings."], codegen:["Code Generator","Pseudocode se asli code tak."],
   debugger:["Code Debugger","Tumhari rubber duck, jo jawab deti hai."], reviewer:["Code Reviewer","Wo imaandar teammate."],
   algorithm:["Algorithm Visualizer","Logic ko dekho, sirf padho mat."], knowledge:["3D Knowledge Map","Tumhara PDF, vichaaron ki galaxy."],
-  weakspots:["Weak-Spot Radar","Jaano kahan phisalte ho."], exam:["Exam Simulator","Asli paper, asli clock."],
+  pyq:["PYQ Practice","Purane paper, asli practice."], weakspots:["Weak-Spot Radar","Jaano kahan phisalte ho."], exam:["Exam Simulator","Asli paper, asli clock."],
   swipe:["Swipe Cards","Flashcards swipe karke review karo."], listen:["Listen Mode","Notes ko audio bana do."],
   sketch:["Sketchpad","Diagram aur formulas banao."], planner:["Study Planner","Exam tak din-ba-din plan."],
   mynotes:["Mere Notes","Tumhare apne notes, hamesha saved."], pdfsearch:["PDF mein dhoondo","Ctrl+F, par saare PDFs ke liye."],

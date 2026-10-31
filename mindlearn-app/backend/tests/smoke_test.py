@@ -155,6 +155,39 @@ for _ in range(200):
     _t.sleep(0.05)
 ok("async upload error is friendly", st["done"] and "only PDF" in (st["error"] or ""), st)
 
+
+# --- v30.2: PYQ / past-paper mode ---
+def wait_job(jid):
+    st = {}
+    for _ in range(300):
+        st = c.get(f"/jobs/{jid}").json()
+        if st["done"]: break
+        _t.sleep(0.05)
+    return st
+_x = main._db(); _x.execute("delete from usage"); _x.commit(); _x.close()
+c.post("/upload", files=[pdf("paper.pdf", b"PAPER doc")])
+RESP["v"] = ['{"questions":[{"number":"1","question":"What is the SI unit of force?","options":["A) Joule","B) Newton","C) Watt","D) Pascal"],"answer":"B","topic":"Units","page":1},'
+             '{"number":"2","question":"too short","options":["A) x"],"answer":null,"topic":"X","page":1},'
+             '{"number":"3","question":"Which gas do plants absorb for photosynthesis?","options":["A) O2","B) CO2","C) N2","D) H2"],"answer":null,"topic":"Biology","page":2},'
+             '{"number":"1b","question":"What is the SI unit of force?","options":["A) Joule","B) Newton","C) Watt","D) Pascal"],"answer":null,"topic":"Units","page":1}]}']
+r = c.post("/pyq/extract", json={"exam": "neet"}); ok("pyq extract starts a job", r.status_code == 200 and r.json().get("job_id"), r.text)
+st = wait_job(r.json()["job_id"]); res = st.get("result") or {}
+qs = res.get("questions", [])
+ok("pyq extracts, drops bad + duplicate", st["done"] and not st["error"] and len(qs) == 2, st)
+ok("pyq normalises answer letter -> full option", qs and qs[0]["answer"] == "B) Newton" and qs[1]["answer"] is None, qs)
+ok("pyq returns page info + ids", res.get("page_from") == 1 and res.get("total_pages") == 3 and qs[0]["id"], res)
+RESP["v"] = ['{"questions":[]}']
+st = wait_job(c.post("/pyq/extract", json={}).json()["job_id"]); ok("pyq no questions -> friendly 422 message", st["done"] and "multiple-choice" in (st["error"] or ""), st)
+st = wait_job(c.post("/pyq/extract", json={"page_from": 50}).json()["job_id"]); ok("pyq page out of range -> message", st["done"] and "No text on pages" in (st["error"] or ""), st)
+RESP["v"] = ['{"correct_option":"A) wrong","steps":["F = ma","Unit is kg m/s^2"],"concept":"Newton second law","shortcut":"","why_wrong":"Joule is energy","topic":"Units","confidence":"medium"}']
+r = c.post("/pyq/solve", json={"question": "What is the SI unit of force?", "options": ["A) Joule", "B) Newton"], "user_answer": "A) Joule", "official_answer": "B) Newton"}).json()
+ok("pyq solve trusts official answer", r["correct_option"] == "B) Newton" and r["confidence"] == "high" and len(r["steps"]) == 2 and r["why_wrong"], r)
+r = c.post("/pyq/solve", json={"question": "What is the SI unit of force?", "options": ["A) Joule", "B) Newton"]}).json()
+ok("pyq solve without key keeps AI answer + confidence", r["correct_option"] == "A) wrong" and r["confidence"] == "medium", r)
+RESP["v"] = ["not json at all"]
+ok("pyq solve bad json -> 502", c.post("/pyq/solve", json={"question": "What is the SI unit of force?"}).status_code == 502)
+ok("pyq solve empty -> 400", c.post("/pyq/solve", json={"question": ""}).status_code == 400)
+
 # --- v30: feedback + error log + admin ---
 ok("feedback saved", c.post("/feedback", json={"kind": "bug", "message": "button broken", "page": "#/x"}).json() == {"ok": True})
 ok("feedback too short -> 400", c.post("/feedback", json={"message": "a"}).status_code == 400)
