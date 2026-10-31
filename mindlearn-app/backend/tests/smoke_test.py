@@ -188,6 +188,21 @@ RESP["v"] = ["not json at all"]
 ok("pyq solve bad json -> 502", c.post("/pyq/solve", json={"question": "What is the SI unit of force?"}).status_code == 502)
 ok("pyq solve empty -> 400", c.post("/pyq/solve", json={"question": ""}).status_code == 400)
 
+
+# --- v31: share links ---
+deck = [{"q": "Capital of India?", "a": "New Delhi"}, {"term": "H2O", "definition": "Water"}, {"q": "", "a": "x"}]
+r = c.post("/share", json={"kind": "flashcards", "title": "GK", "items": deck}); sid = r.json().get("id")
+ok("share creates link", r.status_code == 200 and sid, r.text)
+g = c.get(f"/share/{sid}").json()
+ok("share is public + normalised (no auth needed)", g["kind"] == "flashcards" and g["title"] == "GK" and len(g["items"]) == 2 and g["items"][1] == {"q": "H2O", "a": "Water"} and g["author"] == "R", g)
+quiz = [{"question": "2+2?", "options": ["3", "4"], "answer": "4", "explanation": "math", "topic": "Arithmetic"}, {"question": "bad", "options": ["x", "y"], "answer": "z"}]
+r = c.post("/share", json={"kind": "quiz", "items": quiz}); qs_ = c.get(f"/share/{r.json()['id']}").json()
+ok("share quiz keeps only valid questions", qs_["kind"] == "quiz" and len(qs_["items"]) == 1 and qs_["title"] == "Quiz", qs_)
+ok("share empty -> 400", c.post("/share", json={"kind": "flashcards", "items": []}).status_code == 400)
+ok("share bad kind -> 400", c.post("/share", json={"kind": "notes", "items": ["x"]}).status_code == 400)
+ok("share unknown id -> 404", c.get("/share/nope").status_code == 404)
+ok("share delete", c.delete(f"/share/{sid}").status_code == 200 and c.get(f"/share/{sid}").status_code == 404 and c.delete(f"/share/{sid}").status_code == 404)
+
 # --- v30: feedback + error log + admin ---
 ok("feedback saved", c.post("/feedback", json={"kind": "bug", "message": "button broken", "page": "#/x"}).json() == {"ok": True})
 ok("feedback too short -> 400", c.post("/feedback", json={"message": "a"}).status_code == 400)
@@ -201,7 +216,7 @@ ok("admin/me true (case-insensitive)", c.get("/admin/me").json() == {"admin": Tr
 # account purge removes everything
 main.purge_user_data(7, "r@x.com")
 c2 = db_check = main.db.connect("main")
-left = [c2.execute(f'select count(*) from {t_} where "user"=?', ("7",)).fetchone()[0] for t_ in ("docs", "chunks", "usage", "feedback", "errors", "uploads")]
-c2.close(); ok("purge clears all tables", left == [0] * 6, left)
+left = [c2.execute(f'select count(*) from {t_} where "user"=?', ("7",)).fetchone()[0] for t_ in ("docs", "chunks", "usage", "feedback", "errors", "uploads", "shares")]
+c2.close(); ok("purge clears all tables", left == [0] * 7, left)
 print("\n" + ("ALL PASSED" if not fails else f"{len(fails)} FAILED: {fails}"))
 sys.exit(1 if fails else 0)

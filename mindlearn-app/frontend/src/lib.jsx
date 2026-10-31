@@ -128,6 +128,16 @@ export async function uploadPdfs(files, onProgress){
 }
 export const upStatus = { msg: "" }
 
+// ---------------- share links (flashcards / quizzes) ----------------
+export async function shareSet(kind, title, items){
+  const { data } = await api.post("/share", { kind, title, items })
+  const url = location.origin + "/#/s/" + data.id
+  const text = kind === "quiz" ? "Try this quiz on MindLearn AI" : "Study this flashcard deck on MindLearn AI"
+  try{ if(navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)){ await navigator.share({ title: title || "MindLearn AI", text, url }); return url } }catch(e){ if(e?.name === "AbortError") return url }
+  try{ await navigator.clipboard.writeText(url); toast("Link copied! Send it to a friend. 🔗", "success") }catch(e){ window.prompt("Copy this link:", url) }
+  return url
+}
+
 // ---------------- cloud sync (optional: needs the backend sync router) ----------------
 export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done","ml_pyq"]
 export const syncInfo = { status: "idle", at: 0 }

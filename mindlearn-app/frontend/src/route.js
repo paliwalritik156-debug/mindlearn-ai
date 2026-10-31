@@ -18,3 +18,4 @@ export function resetToken(){
 }
 
 export function isAdminRoute(){ return location.hash === "#/admin" }
+export function sharedId(){ const m = /^#\/s\/([\w-]{3,40})$/.exec(location.hash); return m ? m[1] : null }

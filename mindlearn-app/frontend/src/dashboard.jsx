@@ -1,5 +1,5 @@
 import { lazy, useEffect, useMemo, useRef, useState } from "react"
-import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
+import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, shareSet, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
 import PyqTab from "./pyq.jsx"
 import { KnowledgeMapTab, WeakSpotsTab, WeakCard, ExamTab, VoiceTab, SourceChip } from "./features.jsx"
 import { savePdfs } from "./pdfstore.js"
@@ -423,6 +423,7 @@ function Flashcards(){
         {cards.length>0 && <button className="btn btn-ghost" onClick={shuffle}>🔀 Shuffle</button>}
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>downloadFile("mindlearn-flashcards.txt", cards.map(c=>String(c.q||"").replace(/\t|\n/g," ") + "\t" + String(c.a||"").replace(/\t|\n/g," ")).join("\n"))} title="Tab-separated: import into Anki or Quizlet">⬇ Anki</button>}
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>downloadFile("mindlearn-deck.json", JSON.stringify({ app:"mindlearn-deck", cards }, null, 1), "application/json")} title="Share this deck with a friend">⬇ Share</button>}
+        {cards.length>0 && <button className="btn btn-ghost" onClick={()=>shareSet("flashcards", "Flashcards", cards).catch(e=>toast(e?.response?.data?.detail || "Couldn't create the link.", "error"))} title="Get a link a friend can open without signing in">🔗 Share link</button>}
         <button className="btn btn-ghost" onClick={()=>impRef.current?.click()}>⬆ Import</button><input ref={impRef} type="file" accept="application/json" hidden onChange={e=>{ importDeck(e.target.files[0]); e.target.value="" }} />
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>downloadFile("mindlearn-flashcards.csv", "Question,Answer\n" + cards.map(c=>csvCell(c.q)+","+csvCell(c.a)).join("\n"), "text/csv")}>⬇ CSV</button>}
       </div>
@@ -496,6 +497,7 @@ function Quiz({ loader, autoStart = false } = {}){
       <Confetti fire={fire} />
       <div className="tool-actions">
         <button className="btn btn-p" disabled={loading} onClick={gen}>{loading ? <Spin/> : (n ? "New Quiz" : "Generate Quiz")}</button>
+        {n>0 && <button className="btn btn-ghost" onClick={()=>shareSet("quiz", "Quiz", questions.map(q=>({ question: q.question || q.q, options: q.options || q.choices, answer: q.answer || q.correct, explanation: q.explanation, topic: q.topic }))).catch(e=>toast(e?.response?.data?.detail || "Couldn't create the link.", "error"))} title="Get a link a friend can open without signing in">🔗 Share quiz</button>}
       </div>
       {err && <ErrBox msg={err} onRetry={gen} />}
       {loading && <div className="skel-card"><Skeleton lines={5}/></div>}

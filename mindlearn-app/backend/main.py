@@ -307,7 +307,7 @@ def purge_user_data(uid, email=None):
     shutil.rmtree(_persist_dir(uid), ignore_errors=True)
     c = _db()
     try:
-        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads"):
+        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads", "shares"):
             c.execute(f'delete from {t} where "user"=?', (str(uid),))
         c.commit()
     finally:

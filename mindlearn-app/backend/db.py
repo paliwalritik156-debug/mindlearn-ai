@@ -133,6 +133,8 @@ def init_schema():
             "create index if not exists chunks_user on chunks(\"user\")",
             "create table if not exists feedback(id INTEGER PRIMARY KEY AUTOINCREMENT, \"user\" text, email text, kind text, message text, page text, ua text, created real)",
             "create table if not exists errors(id INTEGER PRIMARY KEY AUTOINCREMENT, \"user\" text, message text, stack text, page text, ua text, created real)",
+            "create table if not exists shares(id text primary key, \"user\" text, kind text, title text, author text, data text, created real, views int)",
+            "create index if not exists shares_user on shares(\"user\")",
             "create table if not exists uploads(id INTEGER PRIMARY KEY AUTOINCREMENT, \"user\" text, name text, pages int, chunks int, ok int, seconds real, error text, created real)",
         ]:
             c.execute(ddl(stmt))
