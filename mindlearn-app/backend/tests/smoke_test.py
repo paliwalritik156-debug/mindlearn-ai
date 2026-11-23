@@ -203,6 +203,21 @@ ok("share bad kind -> 400", c.post("/share", json={"kind": "notes", "items": ["x
 ok("share unknown id -> 404", c.get("/share/nope").status_code == 404)
 ok("share delete", c.delete(f"/share/{sid}").status_code == 200 and c.get(f"/share/{sid}").status_code == 404 and c.delete(f"/share/{sid}").status_code == 404)
 
+
+# --- v33: twin question ---
+GOOD = '{"question":"A body of mass 4 kg accelerates at 3 m/s^2. What is the net force?","options":["A) 7 N","B) 12 N","C) 1.3 N","D) 0.75 N"],"answer":"B","explanation":"F = ma = 4 x 3 = 12 N","topic":"Newton laws"}'
+RESP["v"] = [GOOD]
+tw = c.post("/pyq/twin", json={"question": "A body of mass 2 kg accelerates at 5 m/s^2. What is the net force?", "options": ["A) 10 N", "B) 7 N"], "correct_option": "A) 10 N", "topic": "Newton laws"}).json()
+ok("twin question made + answer letter normalised", tw.get("twin") is True and tw["answer"] == "B) 12 N" and len(tw["options"]) == 4 and tw["topic"] == "Newton laws", tw)
+RESP["v"] = ['{"question":"A body of mass 2 kg accelerates at 5 m/s^2. What is the net force?","options":["A) 10 N","B) 7 N"],"answer":"A) 10 N"}']
+ok("twin identical to original -> 502", c.post("/pyq/twin", json={"question": "A body of mass 2 kg accelerates at 5 m/s^2. What is the net force?", "options": ["A) 10 N"]}).status_code == 502)
+RESP["v"] = ['{"question":"A fresh enough question about forces?","options":["A) x","B) y"],"answer":"Z"}']
+ok("twin with answer not in options -> 502", c.post("/pyq/twin", json={"question": "Original question about forces and mass?"}).status_code == 502)
+RESP["v"] = ["not json"]
+ok("twin bad json -> 502", c.post("/pyq/twin", json={"question": "Original question about forces and mass?"}).status_code == 502)
+ok("twin empty -> 400", c.post("/pyq/twin", json={"question": ""}).status_code == 400)
+ok("sync accepts mistake log + revenge queue", c.put("/sync/state", json={"data": {"ml_mistakes": "[]", "ml_revenge": "[]"}, "updated_at": 99}).status_code == 200 and set(c.get("/sync/state").json()["data"]) >= {"ml_mistakes", "ml_revenge"})
+
 # --- v30: feedback + error log + admin ---
 ok("feedback saved", c.post("/feedback", json={"kind": "bug", "message": "button broken", "page": "#/x"}).json() == {"ok": True})
 ok("feedback too short -> 400", c.post("/feedback", json={"message": "a"}).status_code == 400)

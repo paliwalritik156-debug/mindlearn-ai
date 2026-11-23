@@ -1761,3 +1761,17 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
 .pyq-conf{ font-size:11.5px; padding:2px 8px; border-radius:99px; border:1px solid var(--card-border); margin-left:6px; color:var(--text-dim) } .pyq-conf.low{ color:#f59e0b; border-color:#f59e0b }
 .pyq-sum{ margin-top:14px; padding:14px; border-radius:14px; border:1px solid var(--v); background:rgba(var(--v-rgb),.1) } .pyq-sum h4{ margin:0 0 6px }
 .share-page .fc-meta{ margin-bottom:10px } .share-cta{ margin-top:16px }
+
+/* v33: Mistake DNA + Revenge Queue */
+.pyq-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+.pyq-cause{ margin:10px 0; padding:10px 12px; border:1px dashed var(--card-border); border-radius:12px; }
+.pyq-twin{ margin-top:14px; padding:12px; border:1px solid var(--v); border-radius:14px; background:rgba(var(--v-rgb),.06); }
+.dna-row{ display:flex; align-items:center; gap:10px; margin:6px 0; font-size:14px; }
+.dna-l{ width:150px; flex:none; }
+.dna-bar{ flex:1; height:10px; border-radius:99px; background:var(--card-border); overflow:hidden; }
+.dna-bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--cy),var(--v)); border-radius:99px; }
+.dna-n{ width:24px; text-align:right; color:var(--text-dim); }
+.dna-top{ padding:6px 0; border-bottom:1px solid var(--card-border); font-size:14px; }
+.dna-top span{ color:var(--text-dim); margin-left:6px; }
+.dna-adv{ padding-left:18px; line-height:1.6; }
+@media (max-width:520px){ .dna-l{ width:110px; font-size:13px; } }

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { api, toast, Spin, useLocalState, recordAnswers, getOutLang } from "./lib.jsx"
+import { CAUSES, causeLabel, pushLog, setLogCause, addToQueue, dueItems, waitingItems, gradeItem, setItemField, daysUntil, mistakeDna, BOX_DAYS } from "./mistakes.js"
 
 /* PYQ / past-paper mode: upload a real question paper (PDF), the app pulls out the actual
    multiple-choice questions, you attempt them, and every answer feeds the Weak-Spot Radar. */
@@ -33,7 +34,153 @@ async function waitJob(jid, onProg){
   throw new Error("This is taking too long. Please try again.")
 }
 
-export default function PyqTab(){
+
+const outLang = ()=>LANG_NAME[getOutLang()] || "English"
+const isHi = ()=>getOutLang() !== "en"
+
+/* One question card used by the Revenge Queue and by twin questions. It reports the verdict once. */
+function MiniQ({ q, exam, idKey, onVerdict }){
+  const [pick, setPick] = useState(null)
+  const [res, setRes] = useState(null)
+  const [sol, setSol] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const t0 = useRef(Date.now())
+  useEffect(()=>{ setPick(null); setRes(null); setSol(null); t0.current = Date.now() }, [idKey])
+  function finish(o, correct){
+    const ok = sameOpt(o, correct)
+    setRes({ ok, correct })
+    onVerdict && onVerdict(ok, correct, Math.min(600, Math.round((Date.now() - t0.current) / 1000)))
+  }
+  function choose(o){ if(res) return; setPick(o); if(q.answer) finish(o, q.answer) }
+  async function loadSol(){
+    if(sol) return sol
+    setBusy(true)
+    try{
+      const { data } = await api.post("/pyq/solve", { question: q.question, options: q.options, user_answer: pick || "", official_answer: q.answer || "", exam: exam || "exam", language: outLang() })
+      setSol(data); return data
+    }catch(e){ toast(e?.response?.data?.detail || "Couldn't solve this one. Try again.", "error"); return null }
+    finally{ setBusy(false) }
+  }
+  async function check(){ const d = await loadSol(); if(d && pick && !res) finish(pick, d.correct_option) }
+  const correct = res?.correct
+  return (
+    <div className="pyq-q" data-testid="miniq">
+      <div className="pyq-meta">{q.topic}{q.twin ? " · 🧬 twin question" : ""}</div>
+      <div className="pyq-text">{q.question}</div>
+      <div className="pyq-opts">
+        {q.options.map(o=>(
+          <button key={o} className={"pyq-o" + (pick === o ? " picked" : "") + (res && sameOpt(o, correct) ? " right" : "") + (res && pick === o && !sameOpt(o, correct) ? " wrong" : "")} disabled={!!res} onClick={()=>choose(o)}>{o}</button>
+        ))}
+      </div>
+      {res && <div className={"pyq-res " + (res.ok ? "ok" : "bad")}>{res.ok ? "✅ Correct" : "❌ Not quite"}</div>}
+      <div className="pyq-acts">
+        {!res && pick && !q.answer && <button className="btn btn-p" disabled={busy} onClick={check} data-testid="miniq-check">{busy ? <Spin /> : "Check my answer"}</button>}
+        {res && !q.explanation && !sol && <button className="btn" disabled={busy} onClick={loadSol}>{busy ? <Spin /> : "💡 Show solution"}</button>}
+      </div>
+      {(q.explanation || sol) && res && (
+        <div className="pyq-sol">
+          {sol ? <><ol>{sol.steps.map((x, i)=><li key={i}>{x}</li>)}</ol>{sol.concept && <p><b>Concept:</b> {sol.concept}</p>}</> : <p>{q.explanation}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TwinBox({ base, exam, onResult }){
+  const [tw, setTw] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [n, setN] = useState(0)
+  async function make(){
+    setBusy(true)
+    try{
+      const { data } = await api.post("/pyq/twin", { question: base.question, options: base.options, correct_option: base.answer || "", topic: base.topic, exam: exam || "exam", language: outLang() })
+      setTw(data); setN(v=>v + 1)
+    }catch(e){ toast(e?.response?.data?.detail || "Couldn't make a twin question. Try again.", "error") }
+    finally{ setBusy(false) }
+  }
+  if(!tw) return <div className="pyq-acts"><button className="btn" disabled={busy} onClick={make} data-testid="twin-make">{busy ? <Spin /> : "🧬 Try a twin question"}</button><span className="pyq-note small" style={{ alignSelf: "center" }}>Same concept, new numbers. Tests whether you really got it.</span></div>
+  return (
+    <div className="pyq-twin">
+      <MiniQ q={tw} exam={exam} idKey={"tw" + n} onVerdict={ok=>{ recordAnswers([{ topic: tw.topic, ok, q: tw.question }]); onResult && onResult(ok) }} />
+      <div className="pyq-acts"><button className="btn btn-ghost btn-sm" disabled={busy} onClick={make}>{busy ? <Spin /> : "Another twin"}</button><button className="btn btn-ghost btn-sm" onClick={()=>setTw(null)}>Close</button></div>
+    </div>
+  )
+}
+
+function CauseChips({ onPick, onSkip }){
+  return (
+    <div className="pyq-cause" data-testid="cause-chips">
+      <div className="pyq-note" style={{ margin: "0 0 6px" }}><b>Why did you miss it?</b> (builds your Mistake DNA)</div>
+      <div className="fb-kinds">
+        {CAUSES.map(c=><button key={c.key} className="chip" onClick={()=>onPick(c.key)} data-testid={"cause-" + c.key}>{c.icon} {isHi() ? c.hi : c.en}</button>)}
+        <button className="chip" onClick={onSkip}>Skip</button>
+      </div>
+    </div>
+  )
+}
+
+function DnaView({ log, goto }){
+  const d = useMemo(()=>mistakeDna(log, isHi() ? "hi" : "en"), [log])
+  const hi = isHi()
+  if(!d.n) return <div className="pyq-empty">Your Mistake DNA appears here after you answer some PYQ questions. Each wrong answer asks <i>why</i> you missed it, and that is what makes this useful.<div style={{ marginTop: 10 }}><button className="btn btn-p" onClick={()=>goto("practice")}>Start a paper</button></div></div>
+  return (
+    <div data-testid="dna">
+      <div className="ad-grid" style={{ marginTop: 0 }}>
+        <div className="ad-stat"><div className="ad-n">{d.n}</div><div className="ad-l">Answered</div></div>
+        <div className="ad-stat"><div className="ad-n">{d.accuracy}%</div><div className="ad-l">Accuracy</div></div>
+        <div className="ad-stat"><div className="ad-n">{d.avgRight || "–"}{d.avgRight ? "s" : ""}</div><div className="ad-l">Avg time, right</div></div>
+        <div className="ad-stat"><div className="ad-n" style={d.avgWrong && d.avgRight && d.avgWrong < d.avgRight * 0.6 ? { color: "#f59e0b" } : null}>{d.avgWrong || "–"}{d.avgWrong ? "s" : ""}</div><div className="ad-l">Avg time, wrong</div></div>
+      </div>
+      <h4 style={{ margin: "16px 0 6px" }}>Why you miss questions</h4>
+      {d.tagged === 0 ? <p className="pyq-note">Tag the reason after a wrong answer to see this chart.</p> : d.byCause.map(c=>(
+        <div className="dna-row" key={c.key}><span className="dna-l">{c.icon} {causeLabel(c.key, hi ? "hi" : "en")}</span><div className="dna-bar"><i style={{ width: Math.round(c.pct * 100) + "%" }} /></div><span className="dna-n">{c.count}</span></div>
+      ))}
+      {d.topTopics.length > 0 && (<><h4 style={{ margin: "16px 0 6px" }}>Where you leak marks</h4>
+        {d.topTopics.map(t=><div className="dna-top" key={t.topic}><b>{t.topic}</b> <span>{t.wrong} of {t.total} wrong{t.cause ? " · mostly " + causeLabel(t.cause, "en").toLowerCase() : ""}</span></div>)}</>)}
+      <h4 style={{ margin: "16px 0 6px" }}>What to do about it</h4>
+      {d.enough ? (d.advice.length ? <ul className="dna-adv">{d.advice.map((a, i)=><li key={i}>{a}</li>)}</ul> : <p className="pyq-note">Your misses have mixed reasons, so no single pattern yet. Keep tagging.</p>)
+        : <p className="pyq-note">Answer at least 5 questions with 2 or more mistakes and the advice appears here ({d.n} answered, {d.wrong} wrong so far).</p>}
+      <div className="pyq-acts"><button className="btn btn-p" onClick={()=>goto("revenge")}>⚔ Open Revenge Queue</button><button className="btn" onClick={()=>goto("practice")}>Practise more</button></div>
+    </div>
+  )
+}
+
+function RevengeView({ queue, setQueue, goto, exam }){
+  const [active, setActive] = useState(null)
+  const [now] = useState(()=>Date.now())
+  const due = dueItems(queue, now), waiting = waitingItems(queue, now), mastered = queue.filter(x=>x.mastered).length
+  const item = (active && queue.find(x=>x.id === active)) || due[0]
+  const [graded, setGraded] = useState(null)
+  useEffect(()=>{ setGraded(null) }, [item?.id])
+  if(!queue.length) return <div className="pyq-empty">Nothing here yet. Every PYQ question you get wrong lands in your Revenge Queue and comes back after 1, 3, 7, 14 and 30 days, until you beat it.<div style={{ marginTop: 10 }}><button className="btn btn-p" onClick={()=>goto("practice")}>Start a paper</button></div></div>
+  const cur = item && queue.find(x=>x.id === item.id)
+  return (
+    <div data-testid="revenge">
+      <p className="pyq-note" style={{ marginTop: 0 }}><b>{due.length}</b> due now · {waiting.length} waiting · {mastered} mastered 🏆</p>
+      {!item ? (
+        <div className="pyq-empty">All caught up. 🎉 {waiting[0] ? `Next review in ${daysUntil(waiting[0].due, now)} day(s).` : ""}<div style={{ marginTop: 10 }}><button className="btn" onClick={()=>goto("practice")}>Practise a paper</button></div></div>
+      ) : (
+        <>
+          <MiniQ key={item.id} q={item} exam={item.exam || exam} idKey={item.id} onVerdict={(ok, correct)=>{
+            setActive(item.id)
+            setQueue(q=>setItemField(gradeItem(q, item.id, ok), item.id, correct && !item.answer ? { answer: correct } : {}))
+            setGraded(ok)
+          }} />
+          {graded !== null && cur && (
+            <div className={"pyq-res " + (graded ? "ok" : "bad")} data-testid="revenge-outcome">
+              {cur.mastered ? "🏆 Beaten for good. This question is mastered." : graded ? `Moved up. You'll see it again in ${daysUntil(cur.due)} day(s) (step ${cur.box + 1} of ${BOX_DAYS.length}).` : "Back to step 1. You'll see it again tomorrow."}
+            </div>
+          )}
+          {graded !== null && <TwinBox base={item} exam={item.exam || exam} onResult={ok=>{ if(ok) setQueue(q=>setItemField(q, item.id, { twinWins: (q.find(x=>x.id === item.id)?.twinWins || 0) + 1 })) }} />}
+          {graded !== null && <div className="pyq-acts"><button className="btn btn-p" onClick={()=>{ setActive(null); setGraded(null) }} data-testid="revenge-next">Next →</button></div>}
+          {item.twinWins > 0 && <p className="pyq-note small">🧬 Twin questions solved: {item.twinWins}</p>}
+        </>
+      )}
+    </div>
+  )
+}
+
+function Practice({ log, setLog, queue, setQueue }){
   const [set, setSet] = useLocalState("ml_pyq", null)
   const [docs, setDocs] = useState([])
   const [docId, setDocId] = useState("")
@@ -44,6 +191,8 @@ export default function PyqTab(){
   const [err, setErr] = useState("")
   const [cur, setCur] = useState(0)
   const [solving, setSolving] = useState(false)
+  const shownAt = useRef(Date.now())
+  useEffect(()=>{ shownAt.current = Date.now() }, [cur, set?.at])
 
   useEffect(()=>{
     api.get("/library", { silent: true }).then(r=>{
@@ -77,34 +226,47 @@ export default function PyqTab(){
   const sol = (q && set.solutions?.[q.id]) || null
 
   function patch(fn){ setSet(s=>fn({ ...s, answers: { ...s.answers }, solutions: { ...s.solutions } })) }
-  function judge(qq, pick, correct){
+  // one place that records a verdict: weak-spot radar, mistake log and (if wrong) the revenge queue
+  function verdict(qq, pick, correct, secs){
     const ok = sameOpt(pick, correct)
+    const at = Date.now()
     recordAnswers([{ topic: qq.topic, ok, q: qq.question }])
+    setLog(l=>pushLog(l, { id: qq.id, topic: qq.topic, ok, secs, at }))
+    if(!ok) setQueue(qd=>addToQueue(qd, { id: qq.id, question: qq.question, options: qq.options, answer: correct || null, topic: qq.topic, exam: set?.exam || exam, source: set?.name || "" }))
     return ok
   }
   function choose(opt){
     if(!q || ans?.pick) return
+    const secs = Math.min(600, Math.round((Date.now() - shownAt.current) / 1000))
     if(q.answer){
-      const ok = judge(q, opt, q.answer)
-      patch(s=>{ s.answers[q.id] = { pick: opt, ok, recorded: true }; return s })
+      const ok = verdict(q, opt, q.answer, secs)
+      patch(s=>{ s.answers[q.id] = { pick: opt, ok, recorded: true, secs }; return s })
     }else{
-      patch(s=>{ s.answers[q.id] = { pick: opt, ok: null, recorded: false }; return s })
+      patch(s=>{ s.answers[q.id] = { pick: opt, ok: null, recorded: false, secs }; return s })
     }
   }
   async function solve(){
     if(!q) return
     setSolving(true)
     try{
-      const { data } = await api.post("/pyq/solve", { question: q.question, options: q.options, user_answer: ans?.pick || "", official_answer: q.answer || "", exam: set.exam || exam, language: LANG_NAME[getOutLang()] || "English" })
+      const { data } = await api.post("/pyq/solve", { question: q.question, options: q.options, user_answer: ans?.pick || "", official_answer: q.answer || "", exam: set.exam || exam, language: outLang() })
+      const a = set.answers?.[q.id]
+      const ok = a?.pick && !a.recorded ? verdict(q, a.pick, data.correct_option, a.secs || 0) : null
       patch(s=>{
         s.solutions[q.id] = data
-        const a = s.answers[q.id]
-        if(a?.pick && !a.recorded){ const ok = judge(q, a.pick, data.correct_option); s.answers[q.id] = { ...a, ok, recorded: true } }
+        if(ok !== null) s.answers[q.id] = { ...a, ok, recorded: true }
         return s
       })
     }catch(e){ toast(e?.response?.data?.detail || "Couldn't solve this one. Try again.", "error") }
     finally{ setSolving(false) }
   }
+  function tagCause(cause){
+    if(!q) return
+    setLog(l=>setLogCause(l, q.id, cause))
+    setQueue(qd=>setItemField(qd, q.id, { cause }))
+    patch(s=>{ s.answers[q.id] = { ...s.answers[q.id], cause }; return s })
+  }
+  function skipCause(){ patch(s=>{ s.answers[q.id] = { ...s.answers[q.id], cause: "skipped" }; return s }) }
 
   const stats = useMemo(()=>{
     const done = qs.filter(x=>set?.answers?.[x.id]?.recorded)
@@ -162,6 +324,8 @@ export default function PyqTab(){
             })}
           </div>
           {ans?.recorded && <div className={"pyq-res " + (ans.ok ? "ok" : "bad")}>{ans.ok ? "✅ Correct" : "❌ Not quite"}</div>}
+          {ans?.recorded && ans.ok === false && !ans.cause && <CauseChips onPick={tagCause} onSkip={skipCause} />}
+          {ans?.cause && ans.cause !== "skipped" && <div className="pyq-note small">Tagged: {CAUSES.find(c=>c.key === ans.cause)?.icon} {causeLabel(ans.cause, isHi() ? "hi" : "en")}</div>}
           {ans?.pick && !ans.recorded && !sol && <div className="pyq-res">Answer saved. Tap “Show solution” to check it.</div>}
           <div className="pyq-acts">
             <button className="btn btn-p" disabled={solving} onClick={solve} data-testid="pyq-solve">{solving ? <Spin /> : sol ? "Solution ↓" : "💡 Show solution"}</button>
@@ -193,6 +357,25 @@ export default function PyqTab(){
       </div>
       {busy && <div className="pyq-prog"><div><i style={{ width: prog.pct + "%" }} /></div><span>{prog.msg} {prog.pct}%</span></div>}
       {err && <div className="pyq-err" role="alert">{err}</div>}
+    </div>
+  )
+}
+
+export default function PyqTab(){
+  const [view, setView] = useState("practice")
+  const [log, setLog] = useLocalState("ml_mistakes", [])
+  const [queue, setQueue] = useLocalState("ml_revenge", [])
+  const [exam] = useState("general")
+  const dueN = dueItems(queue).length
+  const tabs = [["practice", "📜 Practice"], ["dna", "🧬 Mistake DNA"], ["revenge", `⚔ Revenge Queue${dueN ? ` (${dueN} due)` : ""}`]]
+  return (
+    <div>
+      <div className="pyq-tabs" role="tablist">
+        {tabs.map(([k, l])=><button key={k} role="tab" aria-selected={view === k} className={"chip" + (view === k ? " on" : "")} onClick={()=>setView(k)} data-testid={"tab-" + k}>{l}</button>)}
+      </div>
+      {view === "practice" && <Practice log={log} setLog={setLog} queue={queue} setQueue={setQueue} />}
+      {view === "dna" && <div className="card pyq"><DnaView log={log} goto={setView} /></div>}
+      {view === "revenge" && <div className="card pyq"><RevengeView queue={queue} setQueue={setQueue} goto={setView} exam={exam} /></div>}
     </div>
   )
 }

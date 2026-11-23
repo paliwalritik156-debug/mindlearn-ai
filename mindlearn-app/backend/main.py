@@ -707,6 +707,40 @@ def pyq_solve(req: PyqSolveRequest, user: dict = Depends(ai_guard)):
         raw["confidence"] = "high"
     return raw
 
+class PyqTwinRequest(BaseModel):
+    question: str
+    options: List[str] = []
+    correct_option: str = ""
+    topic: str = ""
+    exam: str = "general"
+    language: str = "English"
+
+@app.post("/pyq/twin")
+def pyq_twin(req: PyqTwinRequest, user: dict = Depends(ai_guard)):
+    """A fresh multiple-choice question that tests the SAME concept as one the student missed (new numbers / context)."""
+    q = (req.question or "").strip()
+    if len(q) < 5:
+        raise HTTPException(status_code=400, detail="Question is empty.")
+    raw = llm_json(
+        'You write {exam} exam practice. A student missed this question:\nQuestion: {q}\nOptions:\n{opts}\nCorrect answer: {known}\n'
+        'Write ONE new multiple-choice "twin" question that tests exactly the same concept and difficulty, but with different numbers, names or context, '
+        'so it cannot be answered by remembering the original. Give 4 options (or the same number as the original), exactly one correct. '
+        'Return ONLY JSON: {{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"answer":"exactly one of the options","explanation":"2-3 short steps","topic":"2-3 word topic"}}\n'
+        'Language: {lang}.',
+        exam=req.exam or "exam", q=q, opts="\n".join(req.options or []), known=req.correct_option or "not known - work it out", lang=req.language)
+    if not isinstance(raw, dict):
+        raise HTTPException(status_code=502, detail="Couldn't make a twin question. Please try again.")
+    text = str(raw.get("question") or "").strip()
+    opts = [str(o).strip() for o in (raw.get("options") or []) if str(o).strip()]
+    ans = str(raw.get("answer") or "").strip()
+    if ans not in opts:
+        ans = next((o for o in opts if len(ans) <= 3 and o[:1].upper() == ans[:1].upper()), "")
+    norm = lambda t: re.sub(r"\W+", " ", t.lower()).strip()
+    if len(text) < 8 or not (2 <= len(opts) <= 6) or not ans or norm(text) == norm(q):
+        raise HTTPException(status_code=502, detail="Couldn't make a good twin question. Please try again.")
+    return {"question": text[:1200], "options": [o[:400] for o in opts], "answer": ans, "explanation": str(raw.get("explanation") or "")[:800],
+            "topic": str(raw.get("topic") or req.topic or "General").strip()[:40] or "General", "twin": True}
+
 def _history_messages(req):
     msgs = []
     for m in (req.history or [])[-8:]:

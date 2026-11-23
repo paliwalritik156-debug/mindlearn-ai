@@ -139,7 +139,7 @@ export async function shareSet(kind, title, items){
 }
 
 // ---------------- cloud sync (optional: needs the backend sync router) ----------------
-export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done","ml_pyq"]
+export const SYNC_KEYS = ["ml_scores","ml_activity","ml_weak","ml_pins","ml_deck","ml_kmap","ml_srs","ml_hl","ml_time","ml_reading","ml_achievements","ml_bms","ml_chat","ml_outlang","ml_personality","ml_theme","ml_sysprompt","ml_pomodoro","ml_doc","ml_reminder","ml_spot_done","ml_pyq","ml_mistakes","ml_revenge"]
 export const syncInfo = { status: "idle", at: 0 }
 function setSync(status){ syncInfo.status = status; syncInfo.at = Date.now(); window.dispatchEvent(new Event("ml-sync-status")) }
 export function readSyncData(){
