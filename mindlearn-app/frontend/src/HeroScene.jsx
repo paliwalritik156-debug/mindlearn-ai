@@ -94,7 +94,23 @@ export default function HeroScene({ energy = false }){
     centerGroup.add(glowMesh)
 
     const coreGeo = new THREE.TorusKnotGeometry(3.6, 1.1, 180, 24)
-    const coreMat = new THREE.MeshStandardMaterial({ color:0x7C5CFC, metalness:0.7, roughness:0.25, emissive:0x2A1F66, emissiveIntensity:0.5 })
+    // iridescent "glass" shader: dark body, rim light that shifts cyan -> violet -> pink
+    const coreMat = new THREE.ShaderMaterial({
+      uniforms:{ uTime:{ value:0 }, uBoost:{ value:0 } },
+      vertexShader:`varying vec3 vN; varying vec3 vV; varying vec3 vP;
+        void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix * mv; }`,
+      fragmentShader:`uniform float uTime; uniform float uBoost; varying vec3 vN; varying vec3 vV; varying vec3 vP;
+        void main(){
+          float f = pow(1.0 - max(dot(normalize(vN), normalize(vV)), 0.0), 2.2);
+          float t = uTime*0.35 + vP.x*0.12 + vP.y*0.09;
+          vec3 a = vec3(0.13,0.83,0.93), b = vec3(0.49,0.36,0.99), c = vec3(1.0,0.44,0.71);
+          vec3 rim = mix(mix(a,b,0.5+0.5*sin(t)), c, 0.5+0.5*sin(t*0.7+2.0));
+          float stripe = 0.5 + 0.5*sin(vP.y*2.2 + uTime*1.3);
+          vec3 body = vec3(0.035,0.03,0.09) + b*0.10*stripe;
+          vec3 col = body + rim*(f*1.5 + 0.12) + rim*uBoost*0.35;
+          gl_FragColor = vec4(col, 1.0);
+        }`
+    })
     const coreMesh = new THREE.Mesh(coreGeo, coreMat)
     centerGroup.add(coreMesh)
 
@@ -103,7 +119,42 @@ export default function HeroScene({ energy = false }){
     const wireMesh = new THREE.Mesh(wireGeo, wireMat)
     centerGroup.add(wireMesh)
 
+    // soft additive glow sprite behind the core (fake bloom)
+    const mkTex = (inner)=>{
+      const c = document.createElement("canvas"); c.width = c.height = 128
+      const g = c.getContext("2d"); const gr = g.createRadialGradient(64,64,0,64,64,64)
+      gr.addColorStop(0, inner); gr.addColorStop(1, "rgba(0,0,0,0)")
+      g.fillStyle = gr; g.fillRect(0,0,128,128)
+      return new THREE.CanvasTexture(c)
+    }
+    const glowTex = mkTex("rgba(124,92,252,0.55)")
+    const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTex, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, opacity:0.9 }))
+    glowSprite.scale.set(26, 26, 1); glowSprite.position.z = -3
+    centerGroup.add(glowSprite)
     scene.add(centerGroup)
+
+    // spiral galaxy of light dust around the core
+    const dotTex = mkTex("rgba(255,255,255,1)")
+    nodeMat.map = dotTex; nodeMat.alphaTest = 0.08; nodeMat.size = 0.5; nodeMat.needsUpdate = true
+    const GCOUNT = 1600
+    const gPos = new Float32Array(GCOUNT*3), gCol = new Float32Array(GCOUNT*3)
+    const cA = new THREE.Color(0x22D3EE), cB = new THREE.Color(0x8B6BFF), cC = new THREE.Color(0xFF6FB5)
+    for(let i=0;i<GCOUNT;i++){
+      const arm = i % 3, rr = 5 + Math.pow(Math.random(), 0.7) * 11
+      const ang = rr * 0.55 + arm * (Math.PI*2/3) + (Math.random()-0.5) * 0.5
+      gPos[i*3] = Math.cos(ang) * rr
+      gPos[i*3+1] = (Math.random()-0.5) * (1.4 + rr*0.12)
+      gPos[i*3+2] = Math.sin(ang) * rr
+      const col = (arm===0?cA:arm===1?cB:cC).clone().lerp(cB, Math.random()*0.4)
+      gCol[i*3]=col.r; gCol[i*3+1]=col.g; gCol[i*3+2]=col.b
+    }
+    const gGeo = new THREE.BufferGeometry()
+    gGeo.setAttribute("position", new THREE.BufferAttribute(gPos,3))
+    gGeo.setAttribute("color", new THREE.BufferAttribute(gCol,3))
+    const gMat = new THREE.PointsMaterial({ size:0.36, map:dotTex, vertexColors:true, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false })
+    const galaxy = new THREE.Points(gGeo, gMat)
+    galaxy.rotation.x = 0.9; galaxy.rotation.z = -0.25
+    scene.add(galaxy)
 
     // orbiting rings with travelling light beads (adds a sense of time/motion)
     const orbitGroup = new THREE.Group()
@@ -179,6 +230,10 @@ export default function HeroScene({ energy = false }){
       // energy: eases towards 1 while a PDF is dragged over / uploading, then back to 0
       boost += ((energyRef.current ? 1 : 0) - boost) * 0.07
       spin += dt * 60 * 0.016 * (1 + boost * 5)
+      coreMat.uniforms.uTime.value = t
+      coreMat.uniforms.uBoost.value = boost
+      galaxy.rotation.y = t * (0.05 + boost * 0.25)
+      glowSprite.material.opacity = 0.75 + Math.sin(t*1.2) * 0.12 + boost * 0.25
       coreMesh.rotation.x = spin * 0.25
       coreMesh.rotation.y = spin * 0.35
       wireMesh.rotation.x = -spin * 0.2
@@ -205,10 +260,15 @@ export default function HeroScene({ energy = false }){
 
       const op = Math.max(1 - scrollFactor*1.3, 0)
       outerGroup.children.forEach(c=>{ if(c.material) c.material.opacity = (c===points?0.85:0.22) * op })
-      coreMat.opacity = 1
       centerGroup.visible = op > 0.02
       outerGroup.visible = op > 0.02
 
+      // cinematic camera drift following the pointer
+      camera.position.x += (mouseX * 2.2 - camera.position.x) * 0.04
+      camera.position.y += (-mouseY * 1.4 - camera.position.y) * 0.04
+      camera.lookAt(0, 0, 0)
+      galaxy.visible = op > 0.02
+      gMat.opacity = 0.85 * op
       camera.position.z = 23 + scrollFactor*16
       renderer.render(scene, camera)
     }
@@ -226,6 +286,7 @@ export default function HeroScene({ energy = false }){
       starGeo.dispose(); starMat.dispose()
       nodeGeo.dispose(); nodeMat.dispose(); edgeGeo.dispose(); edgeMat.dispose()
       glowGeo.dispose(); glowMat.dispose(); coreGeo.dispose(); coreMat.dispose(); wireGeo.dispose(); wireMat.dispose()
+      gGeo.dispose(); gMat.dispose(); dotTex.dispose(); glowTex.dispose(); glowSprite.material.dispose()
       renderer.dispose()
     }
   },[])

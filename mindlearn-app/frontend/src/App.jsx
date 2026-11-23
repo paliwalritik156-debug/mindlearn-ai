@@ -194,6 +194,8 @@ function Hero({ onUpload, uploading, user, onAuth }){
       style={{ "--spot-x": spot.x+"%", "--spot-y": spot.y+"%" }}>
       <div className="hero-spotlight" />
       <div className="hero-fade" />
+      <div className="hero-grain" aria-hidden="true" />
+      <div className="hero-beam" aria-hidden="true" />
       <div className="hero-grid">
         <div className="hero-text">
           <div className="badge">{t("badge", ALL_FUNCTION_KEYS.length - 2)}</div>
@@ -228,6 +230,9 @@ function Hero({ onUpload, uploading, user, onAuth }){
           </div>
           <div className="hero-float-card hero-float-3">
             🔥 7-day streak
+          </div>
+          <div className="hero-float-card hero-float-1">
+            🧬 Mistake DNA
           </div>
         </div>
       </div>
