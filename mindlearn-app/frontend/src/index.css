@@ -1807,3 +1807,9 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
 
 @media (prefers-reduced-motion:reduce){ .hero-beam,.hero-cta-row .btn-p::after{ animation:none } .hero-text h1.scramble-heading{ animation:heroRise .7s both } }
 @media (max-width:767px){ .hero-float-1{ display:none } .hero-beam{ opacity:.6 } }
+
+/* v35: PDF -> mind -> flashcards phase rail */
+.hero-phase{ position:absolute; z-index:4; left:50%; top:2%; translate:-50% 0; display:flex; gap:6px; padding:5px; border-radius:999px; background:rgba(15,14,26,.55); border:1px solid rgba(255,255,255,.12); backdrop-filter:blur(12px); }
+.hero-phase span{ font-size:12px; padding:5px 12px; border-radius:999px; color:var(--text-dim); transition:all .5s ease; white-space:nowrap; }
+.hero-phase span.on{ color:#0A0A12; font-weight:600; background:linear-gradient(135deg,var(--cy),var(--v)); box-shadow:0 0 22px -4px rgba(var(--v-rgb),.9); }
+@media (max-width:767px){ .hero-phase{ display:none } }

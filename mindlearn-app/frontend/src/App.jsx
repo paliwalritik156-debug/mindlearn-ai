@@ -224,6 +224,7 @@ function Hero({ onUpload, uploading, user, onAuth }){
           {!isLite() && <Suspense fallback={null}><HeroScene energy={dragOver || uploading}/></Suspense>}
           <div className="hero-orb" aria-hidden="true"><i/><i/><i/></div>
           <div className="hero-visual-ring" />
+          <PhaseRail/>
           <DemoWalkthrough/>
           <div className="hero-float-card hero-float-2">
             <b>96%</b> quiz score
@@ -240,6 +241,13 @@ function Hero({ onUpload, uploading, user, onAuth }){
       <a href="#how-it-works" className="scroll-hint" aria-label="Scroll to how it works"><span/></a>
     </section>
   )
+}
+
+function PhaseRail(){
+  const [p, setP] = useState(0)
+  useEffect(()=>{ const f = e=>setP(e.detail); window.addEventListener("ml-hero-phase", f); return ()=>window.removeEventListener("ml-hero-phase", f) },[])
+  const steps = ["📄 Your PDF", "🧠 Understood", "🃏 Flashcards"]
+  return <div className="hero-phase" aria-hidden="true">{steps.map((x, i)=><span key={x} className={i === p ? "on" : ""}>{x}</span>)}</div>
 }
 
 function CountUp({ to, suffix="", duration=1400 }){

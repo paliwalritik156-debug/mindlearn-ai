@@ -156,6 +156,109 @@ export default function HeroScene({ energy = false }){
     galaxy.rotation.x = 0.9; galaxy.rotation.z = -0.25
     scene.add(galaxy)
 
+
+    // ===== signature: a PDF page that dissolves into a mind, then into flashcards =====
+    const MN = 7000
+    const rnd = (a,b)=>a + Math.random()*(b-a)
+    const shapePage = ()=>{
+      const out = new Float32Array(MN*3)
+      const W = 8, H = 10.8
+      for(let i=0;i<MN;i++){
+        let x, y, r = Math.random()
+        if(r < 0.58){            // text lines
+          const row = Math.floor(rnd(0, 13)); y = H/2 - 2.3 - row*0.62
+          const seg = (row*37 % 5) / 5; x = rnd(-W/2+0.9, W/2-0.9 - seg*2.2)
+          if(row === 0){ y = H/2 - 1.2; x = rnd(-W/2+0.9, 0.5) }   // title line
+        }else if(r < 0.84){      // page outline with a folded corner
+          const e = Math.floor(rnd(0,4)), u = Math.random()
+          if(e===0){ x = rnd(-W/2, W/2-1.6); y = H/2 } else if(e===1){ x = -W/2; y = rnd(-H/2, H/2) }
+          else if(e===2){ x = rnd(-W/2, W/2); y = -H/2 } else { x = W/2; y = rnd(-H/2, H/2-1.6) }
+          if(e===0 && u > 0.5){ const t = Math.random(); x = W/2 - 1.6 + t*1.6; y = H/2 - t*1.6 }
+        }else{                   // a figure block
+          x = rnd(-W/2+0.9, W/2-0.9); y = rnd(-H/2+0.8, -H/2+2.4)
+        }
+        out[i*3] = x; out[i*3+1] = y; out[i*3+2] = rnd(-0.12, 0.12)
+      }
+      return out
+    }
+    const shapeMind = ()=>{
+      const out = new Float32Array(MN*3)
+      for(let i=0;i<MN;i++){
+        const y = 1 - (i/(MN-1))*2, r = Math.sqrt(1-y*y), th = Math.PI*(1+Math.sqrt(5))*i
+        const R = 5.4 + (Math.random()<0.18 ? rnd(-1.4,1.4) : rnd(-0.12,0.12))
+        out[i*3] = Math.cos(th)*r*R; out[i*3+1] = y*R; out[i*3+2] = Math.sin(th)*r*R
+      }
+      return out
+    }
+    const shapeCards = ()=>{
+      const out = new Float32Array(MN*3)
+      const cards = [ { x:-1.6, y:1.2, z:-1.6, rz:0.16 }, { x:0.4, y:0, z:0, rz:-0.07 }, { x:2.0, y:-1.3, z:1.7, rz:0.13 } ]
+      const cw = 7.2, ch = 4.7
+      for(let i=0;i<MN;i++){
+        const c = cards[i % 3]; let x, y
+        if(Math.random() < 0.6){ const e = Math.floor(rnd(0,4)); x = e<2 ? rnd(-cw/2,cw/2) : (e===2?-cw/2:cw/2); y = e<2 ? (e===0?ch/2:-ch/2) : rnd(-ch/2,ch/2) }
+        else if(Math.random() < 0.5){ x = rnd(-cw/2+0.7, cw/2-0.7); y = Math.round(rnd(-1,1))*0.9 + 0.4 }   // text rows
+        else{ x = rnd(-cw/2,cw/2); y = rnd(-ch/2,ch/2) }
+        const cs = Math.cos(c.rz), sn = Math.sin(c.rz)
+        out[i*3] = c.x + x*cs - y*sn; out[i*3+1] = c.y + x*sn + y*cs; out[i*3+2] = c.z + rnd(-0.1,0.1)
+      }
+      return out
+    }
+    const mGeo = new THREE.BufferGeometry()
+    const sP = shapePage(), sM = shapeMind(), sC = shapeCards()
+    mGeo.setAttribute("position", new THREE.BufferAttribute(sP,3))
+    mGeo.setAttribute("aB", new THREE.BufferAttribute(sM,3))
+    mGeo.setAttribute("aC", new THREE.BufferAttribute(sC,3))
+    const rr = new Float32Array(MN*4); for(let i=0;i<rr.length;i++) rr[i] = Math.random()
+    mGeo.setAttribute("aR", new THREE.BufferAttribute(rr,4))
+    const mMat = new THREE.ShaderMaterial({
+      transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+      uniforms:{ uPhase:{ value:0 }, uTime:{ value:0 }, uMouse:{ value:new THREE.Vector2(99,99) }, uBoost:{ value:0 }, uPx:{ value:renderer.getPixelRatio() } },
+      vertexShader:`attribute vec3 aB; attribute vec3 aC; attribute vec4 aR;
+        uniform float uPhase, uTime, uBoost, uPx; uniform vec2 uMouse; varying vec3 vCol; varying float vA;
+        vec3 pick(float i, vec3 a, vec3 b, vec3 c){ return i < 0.5 ? a : (i < 1.5 ? b : c); }
+        void main(){
+          float ph = mod(uPhase, 3.0); float i0 = floor(ph); float f = fract(ph);
+          float i1 = mod(i0 + 1.0, 3.0);
+          float e = f*f*(3.0-2.0*f);
+          vec3 p0 = pick(i0, position, aB, aC), p1 = pick(i1, position, aB, aC);
+          vec3 p = mix(p0, p1, clamp(e*1.25 - aR.x*0.25, 0.0, 1.0));
+          float burst = sin(e*3.14159);
+          p += (aR.xyz - 0.5) * 9.0 * burst;                              // dissolve in transit
+          p.xz += vec2(cos(uTime*0.6 + aR.w*6.28), sin(uTime*0.5 + aR.w*6.28)) * 0.05;
+          p.y += sin(uTime*1.2 + aR.w*20.0) * 0.06;
+          vec2 d = p.xy - uMouse; float dl = length(d);                       // cursor pushes dust away
+          p.xy += normalize(d + 0.0001) * smoothstep(3.6, 0.0, dl) * 2.6;
+          p.z += smoothstep(3.6, 0.0, dl) * 1.6;
+          vec3 cPage = vec3(0.78,0.92,1.0), cMind = vec3(0.55,0.42,1.0), cCard = vec3(1.0,0.50,0.75);
+          vec3 c0 = pick(i0, cPage, cMind, cCard), c1 = pick(i1, cPage, cMind, cCard);
+          vCol = mix(c0, c1, e) + vec3(0.0,0.25,0.3) * smoothstep(0.55, 1.0, aR.x) * 0.5;
+          vA = 0.55 + 0.45*aR.y + uBoost*0.3;
+          vec4 mv = modelViewMatrix * vec4(p,1.0);
+          gl_PointSize = (0.7 + aR.z*1.1 + burst*0.8 + uBoost*0.6) * uPx * (22.0 / -mv.z) * 2.1;
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader:`varying vec3 vCol; varying float vA;
+        void main(){ vec2 q = gl_PointCoord - 0.5; float d = length(q); if(d > 0.5) discard;
+          float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vCol * (0.6 + a), a * vA); }`
+    })
+    const morph = new THREE.Points(mGeo, mMat)
+    morph.frustumCulled = false
+    const morphGroup = new THREE.Group(); morphGroup.add(morph); morphGroup.position.y = 2.2; morphGroup.scale.setScalar(0.92); scene.add(morphGroup)
+    coreMesh.visible = false; wireMesh.visible = false
+    let lastPhase = -1
+    const HOLD = 3.4, MOVE = 1.8
+    const phaseAt = (t)=>{ const cyc = HOLD + MOVE, k = Math.floor(t / cyc), r = t - k*cyc; return (k % 3) + (r < HOLD ? 0 : (r - HOLD) / MOVE) }
+    const mouseLocal = new THREE.Vector2(99, 99)
+    const onMountMove = (e)=>{
+      const r = mount.getBoundingClientRect()
+      const hh = Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * camera.position.z, hw = hh * camera.aspect
+      mouseLocal.set(((e.clientX - r.left)/r.width - 0.5) * 2 * hw, -((e.clientY - r.top)/r.height - 0.5) * 2 * hh)
+    }
+    const onMountLeave = ()=>mouseLocal.set(99, 99)
+    window.addEventListener("mousemove", onMountMove)
+    mount.parentElement?.addEventListener("mouseleave", onMountLeave)
+
     // orbiting rings with travelling light beads (adds a sense of time/motion)
     const orbitGroup = new THREE.Group()
     const orbitDefs = [
@@ -230,6 +333,14 @@ export default function HeroScene({ energy = false }){
       // energy: eases towards 1 while a PDF is dragged over / uploading, then back to 0
       boost += ((energyRef.current ? 1 : 0) - boost) * 0.07
       spin += dt * 60 * 0.016 * (1 + boost * 5)
+      const ph = phaseAt(t * (1 + boost * 1.5))
+      mMat.uniforms.uPhase.value = ph; mMat.uniforms.uTime.value = t; mMat.uniforms.uBoost.value = boost
+      mMat.uniforms.uMouse.value.lerp(mouseLocal, 0.25)
+      morphGroup.rotation.y = Math.sin(t*0.35) * 0.35 + mouseX * 0.25
+      morphGroup.rotation.x = -mouseY * 0.15
+      const pi = Math.floor(ph % 3 + 0.5) % 3
+      if(pi !== lastPhase){ lastPhase = pi; window.dispatchEvent(new CustomEvent("ml-hero-phase", { detail: pi })) }
+      morphGroup.visible = (1 - scrollFactor*1.3) > 0.02
       coreMat.uniforms.uTime.value = t
       coreMat.uniforms.uBoost.value = boost
       galaxy.rotation.y = t * (0.05 + boost * 0.25)
@@ -286,6 +397,9 @@ export default function HeroScene({ energy = false }){
       starGeo.dispose(); starMat.dispose()
       nodeGeo.dispose(); nodeMat.dispose(); edgeGeo.dispose(); edgeMat.dispose()
       glowGeo.dispose(); glowMat.dispose(); coreGeo.dispose(); coreMat.dispose(); wireGeo.dispose(); wireMat.dispose()
+      window.removeEventListener("mousemove", onMountMove)
+      mount.parentElement?.removeEventListener("mouseleave", onMountLeave)
+      mGeo.dispose(); mMat.dispose()
       gGeo.dispose(); gMat.dispose(); dotTex.dispose(); glowTex.dispose(); glowSprite.material.dispose()
       renderer.dispose()
     }
