@@ -225,6 +225,7 @@ function Hero({ onUpload, uploading, user, onAuth }){
           <div className="hero-orb" aria-hidden="true"><i/><i/><i/></div>
           <div className="hero-visual-ring" />
           <PhaseRail/>
+          <AskCard/>
           <DemoWalkthrough/>
           <div className="hero-float-card hero-float-2">
             <b>96%</b> quiz score
@@ -240,6 +241,33 @@ function Hero({ onUpload, uploading, user, onAuth }){
       <MarqueeStrip/>
       <a href="#how-it-works" className="scroll-hint" aria-label="Scroll to how it works"><span/></a>
     </section>
+  )
+}
+
+const ASKS = [
+  { q:"Explain Newton's 2nd law simply", a:"Force = mass × acceleration. Push harder and it speeds up faster; make it heavier and it speeds up slower.", src:"📄 p.14 of your PDF" },
+  { q:"Why did I get Q7 wrong?", a:"You rushed it. 3 of your last 4 misses took under 10 seconds. Slow down on numericals.", src:"🧬 Mistake DNA" },
+  { q:"Make 5 flashcards from chapter 3", a:"Done. 5 cards ready, 2 of them come from your weak topics.", src:"🃏 Flashcards" },
+]
+function AskCard(){
+  const [i, setI] = useState(0), [n, setN] = useState(0)
+  const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  const item = ASKS[i]
+  useEffect(()=>{
+    if(reduce){ setN(item.a.length); const id = setTimeout(()=>{ setI(x=>(x+1)%ASKS.length) }, 5000); return ()=>clearTimeout(id) }
+    setN(0)
+    let k = 0, id
+    const type = ()=>{ k += 2; setN(Math.min(k, item.a.length)); if(k < item.a.length) id = setTimeout(type, 28); else id = setTimeout(()=>setI(x=>(x+1)%ASKS.length), 3800) }
+    id = setTimeout(type, 900)
+    return ()=>clearTimeout(id)
+  },[i])
+  const done = n >= item.a.length
+  return (
+    <div className="hero-ask" aria-hidden="true">
+      <div className="hero-ask-q"><i>You</i>{item.q}</div>
+      <div className="hero-ask-a">{item.a.slice(0, n)}{!done && <span className="caret" />}</div>
+      {done && <div className="hero-ask-src">{item.src}</div>}
+    </div>
   )
 }
 

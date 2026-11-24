@@ -1813,3 +1813,14 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
 .hero-phase span{ font-size:12px; padding:5px 12px; border-radius:999px; color:var(--text-dim); transition:all .5s ease; white-space:nowrap; }
 .hero-phase span.on{ color:#0A0A12; font-weight:600; background:linear-gradient(135deg,var(--cy),var(--v)); box-shadow:0 0 22px -4px rgba(var(--v-rgb),.9); }
 @media (max-width:767px){ .hero-phase{ display:none } }
+
+/* v36: live "Ask your PDF" card + click shockwave hint */
+.hero-ask{ position:absolute; z-index:4; right:2%; bottom:-3%; width:min(310px,64%); padding:12px 14px; border-radius:16px; background:linear-gradient(135deg,rgba(255,255,255,.11),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.15); backdrop-filter:blur(18px) saturate(1.5); -webkit-backdrop-filter:blur(18px) saturate(1.5); box-shadow:0 30px 60px -24px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.2); font-size:12.5px; line-height:1.5; min-height:112px; translate:calc(var(--px) * 26px) calc(var(--py) * 16px); transition:translate .3s ease-out; }
+.hero-ask-q{ color:var(--text); font-weight:600; display:flex; gap:8px; align-items:baseline; }
+.hero-ask-q i{ font-style:normal; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:2px 7px; border-radius:99px; background:rgba(var(--v-rgb),.35); color:#fff; }
+.hero-ask-a{ color:var(--text-dim); margin-top:6px; min-height:56px; }
+.caret{ display:inline-block; width:2px; height:1em; margin-left:2px; vertical-align:-2px; background:var(--cy); animation:caretBlink .8s steps(1) infinite; }
+@keyframes caretBlink{ 50%{ opacity:0 } }
+.hero-ask-src{ display:inline-block; margin-top:4px; padding:3px 9px; border-radius:99px; font-size:11px; color:var(--cy); border:1px solid rgba(var(--cy-rgb),.4); animation:heroRise .5s both; }
+@media (max-width:767px){ .hero-ask{ display:none } }
+.hero-visual .hero-float-2{ bottom:auto; top:58%; right:2%; }

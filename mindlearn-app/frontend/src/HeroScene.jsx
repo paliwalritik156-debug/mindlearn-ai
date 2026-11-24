@@ -213,9 +213,9 @@ export default function HeroScene({ energy = false }){
     mGeo.setAttribute("aR", new THREE.BufferAttribute(rr,4))
     const mMat = new THREE.ShaderMaterial({
       transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
-      uniforms:{ uPhase:{ value:0 }, uTime:{ value:0 }, uMouse:{ value:new THREE.Vector2(99,99) }, uBoost:{ value:0 }, uPx:{ value:renderer.getPixelRatio() } },
+      uniforms:{ uPhase:{ value:0 }, uTime:{ value:0 }, uMouse:{ value:new THREE.Vector2(99,99) }, uBoost:{ value:0 }, uKick:{ value:0 }, uPx:{ value:renderer.getPixelRatio() } },
       vertexShader:`attribute vec3 aB; attribute vec3 aC; attribute vec4 aR;
-        uniform float uPhase, uTime, uBoost, uPx; uniform vec2 uMouse; varying vec3 vCol; varying float vA;
+        uniform float uPhase, uTime, uBoost, uKick, uPx; uniform vec2 uMouse; varying vec3 vCol; varying float vA;
         vec3 pick(float i, vec3 a, vec3 b, vec3 c){ return i < 0.5 ? a : (i < 1.5 ? b : c); }
         void main(){
           float ph = mod(uPhase, 3.0); float i0 = floor(ph); float f = fract(ph);
@@ -224,7 +224,8 @@ export default function HeroScene({ energy = false }){
           vec3 p0 = pick(i0, position, aB, aC), p1 = pick(i1, position, aB, aC);
           vec3 p = mix(p0, p1, clamp(e*1.25 - aR.x*0.25, 0.0, 1.0));
           float burst = sin(e*3.14159);
-          p += (aR.xyz - 0.5) * 9.0 * burst;                              // dissolve in transit
+          p += (aR.xyz - 0.5) * (9.0 * burst + 14.0 * uKick);
+          p += normalize(p + 0.0001) * uKick * 3.0 * aR.y;                              // dissolve in transit
           p.xz += vec2(cos(uTime*0.6 + aR.w*6.28), sin(uTime*0.5 + aR.w*6.28)) * 0.05;
           p.y += sin(uTime*1.2 + aR.w*20.0) * 0.06;
           vec2 d = p.xy - uMouse; float dl = length(d);                       // cursor pushes dust away
@@ -248,7 +249,17 @@ export default function HeroScene({ energy = false }){
     coreMesh.visible = false; wireMesh.visible = false
     let lastPhase = -1
     const HOLD = 3.4, MOVE = 1.8
-    const phaseAt = (t)=>{ const cyc = HOLD + MOVE, k = Math.floor(t / cyc), r = t - k*cyc; return (k % 3) + (r < HOLD ? 0 : (r - HOLD) / MOVE) }
+    let tShift = 0, kick = 0
+    const phaseAt = (t0)=>{ const t = t0 + tShift; const cyc = HOLD + MOVE, k = Math.floor(t / cyc), r = t - k*cyc; return (k % 3) + (r < HOLD ? 0 : (r - HOLD) / MOVE) }
+    const onMountClick = (e)=>{
+      const r = mount.getBoundingClientRect()
+      if(e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return
+      if(e.target.closest && e.target.closest('a,button,input,.demo-wt,.hero-ask,.dropzone')) return
+      const cyc = HOLD + MOVE, cur = clock.getElapsedTime() * (1 + boost * 1.5) + tShift
+      tShift += (Math.floor(cur / cyc) + 1) * cyc - cur
+      kick = 1
+    }
+    window.addEventListener('click', onMountClick)
     const mouseLocal = new THREE.Vector2(99, 99)
     const onMountMove = (e)=>{
       const r = mount.getBoundingClientRect()
@@ -334,7 +345,7 @@ export default function HeroScene({ energy = false }){
       boost += ((energyRef.current ? 1 : 0) - boost) * 0.07
       spin += dt * 60 * 0.016 * (1 + boost * 5)
       const ph = phaseAt(t * (1 + boost * 1.5))
-      mMat.uniforms.uPhase.value = ph; mMat.uniforms.uTime.value = t; mMat.uniforms.uBoost.value = boost
+      mMat.uniforms.uPhase.value = ph; mMat.uniforms.uTime.value = t; kick *= 0.94; mMat.uniforms.uBoost.value = boost + kick * 1.2; mMat.uniforms.uKick.value = kick * kick
       mMat.uniforms.uMouse.value.lerp(mouseLocal, 0.25)
       morphGroup.rotation.y = Math.sin(t*0.35) * 0.35 + mouseX * 0.25
       morphGroup.rotation.x = -mouseY * 0.15
@@ -397,7 +408,7 @@ export default function HeroScene({ energy = false }){
       starGeo.dispose(); starMat.dispose()
       nodeGeo.dispose(); nodeMat.dispose(); edgeGeo.dispose(); edgeMat.dispose()
       glowGeo.dispose(); glowMat.dispose(); coreGeo.dispose(); coreMat.dispose(); wireGeo.dispose(); wireMat.dispose()
-      window.removeEventListener("mousemove", onMountMove)
+      window.removeEventListener("mousemove", onMountMove); window.removeEventListener("click", onMountClick)
       mount.parentElement?.removeEventListener("mouseleave", onMountLeave)
       mGeo.dispose(); mMat.dispose()
       gGeo.dispose(); gMat.dispose(); dotTex.dispose(); glowTex.dispose(); glowSprite.material.dispose()
