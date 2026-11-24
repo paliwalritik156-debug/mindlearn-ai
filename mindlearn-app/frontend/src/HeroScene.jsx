@@ -260,6 +260,40 @@ export default function HeroScene({ energy = false }){
       kick = 1
     }
     window.addEventListener('click', onMountClick)
+    // the visitor's own PDF: draw its first-page text to a canvas and turn the lit pixels into the page particles
+    const shapeFromLines = (lines)=>{
+      const CW = 360, CH = 480
+      const c = document.createElement("canvas"); c.width = CW; c.height = CH
+      const g = c.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0,0,CW,CH); g.fillStyle = "#fff"; g.textBaseline = "top"
+      const fit = (txt, font, max)=>{ g.font = font; let t = txt; while(g.measureText(t).width > max && t.length > 4) t = t.slice(0, -2); return t === txt ? t : t + "…" }
+      let y = 34
+      lines.forEach((ln, i)=>{
+        if(y > CH - 34) return
+        if(i === 0){ g.fillText(fit(ln, "bold 22px sans-serif", CW-60), 30, y); y += 40 }
+        else { g.fillText(fit(ln, "13px sans-serif", CW-60), 30, y); y += 19 }
+      })
+      const d = g.getImageData(0,0,CW,CH).data, lit = []
+      for(let i=0;i<CW*CH;i++){ if(d[i*4] > 110) lit.push(i) }
+      if(lit.length < 50) return null
+      const out = new Float32Array(MN*3)
+      for(let i=0;i<MN;i++){
+        if(i % 10 >= 7){ out[i*3] = sP[i*3]; out[i*3+1] = sP[i*3+1]; out[i*3+2] = sP[i*3+2]; continue }   // keep the page outline
+        const px = lit[Math.floor(Math.random()*lit.length)]
+        out[i*3] = ((px % CW)/CW - 0.5) * 7.4 + rnd(-0.03,0.03); out[i*3+1] = (0.5 - Math.floor(px / CW)/CH) * 10.0 + rnd(-0.03,0.03); out[i*3+2] = rnd(-0.12,0.12)
+      }
+      return out
+    }
+    const onHeroPdf = (e)=>{
+      const lines = e.detail?.lines || []
+      const shape = lines.length ? shapeFromLines(lines) : null
+      if(shape){ mGeo.attributes.position.array.set(shape); mGeo.attributes.position.needsUpdate = true }
+      // restart the loop on the page phase with a burst, so the visitor watches their own document form
+      const cyc = HOLD + MOVE, cur = clock.getElapsedTime() * (1 + boost * 1.5) + tShift
+      tShift += Math.ceil((Math.floor(cur / cyc) + 1) / 3) * 3 * cyc - cur
+      kick = 1
+    }
+    window.addEventListener("ml-hero-pdf", onHeroPdf)
+
     const mouseLocal = new THREE.Vector2(99, 99)
     const onMountMove = (e)=>{
       const r = mount.getBoundingClientRect()
@@ -345,7 +379,7 @@ export default function HeroScene({ energy = false }){
       boost += ((energyRef.current ? 1 : 0) - boost) * 0.07
       spin += dt * 60 * 0.016 * (1 + boost * 5)
       const ph = phaseAt(t * (1 + boost * 1.5))
-      mMat.uniforms.uPhase.value = ph; mMat.uniforms.uTime.value = t; kick *= 0.94; mMat.uniforms.uBoost.value = boost + kick * 1.2; mMat.uniforms.uKick.value = kick * kick
+      mMat.uniforms.uPhase.value = ph; mMat.uniforms.uTime.value = t; kick *= Math.pow(0.94, dt * 60 * 1.0); mMat.uniforms.uBoost.value = boost + kick * 1.2; mMat.uniforms.uKick.value = kick * kick
       mMat.uniforms.uMouse.value.lerp(mouseLocal, 0.25)
       morphGroup.rotation.y = Math.sin(t*0.35) * 0.35 + mouseX * 0.25
       morphGroup.rotation.x = -mouseY * 0.15
@@ -408,7 +442,7 @@ export default function HeroScene({ energy = false }){
       starGeo.dispose(); starMat.dispose()
       nodeGeo.dispose(); nodeMat.dispose(); edgeGeo.dispose(); edgeMat.dispose()
       glowGeo.dispose(); glowMat.dispose(); coreGeo.dispose(); coreMat.dispose(); wireGeo.dispose(); wireMat.dispose()
-      window.removeEventListener("mousemove", onMountMove); window.removeEventListener("click", onMountClick)
+      window.removeEventListener("mousemove", onMountMove); window.removeEventListener("click", onMountClick); window.removeEventListener("ml-hero-pdf", onHeroPdf)
       mount.parentElement?.removeEventListener("mouseleave", onMountLeave)
       mGeo.dispose(); mMat.dispose()
       gGeo.dispose(); gMat.dispose(); dotTex.dispose(); glowTex.dispose(); glowSprite.material.dispose()

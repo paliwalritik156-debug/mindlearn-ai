@@ -1879,3 +1879,19 @@ html.light .dropzone{ background:linear-gradient(#ffffffee,#ffffffee) padding-bo
 @media (max-width:767px){ .hero-floor{ display:none } .hero-stats div{ padding:0 16px } }
 @media (prefers-reduced-motion:reduce){ .hero-floor::before,.dropzone{ animation:none } }
 html.lite .hero-floor, html.lite .hero-beam{ display:none }
+
+/* ===== v39: personal hero — greeting, due chip, time-of-day light ===== */
+.hero-hello{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; font-size:13.5px; color:var(--text-dim); }
+.hero-hello > span{ letter-spacing:.01em; }
+.hero-due{ cursor:pointer; font:inherit; font-size:12.5px; padding:5px 12px; border-radius:999px; color:#fff; border:1px solid rgba(255,111,181,.5); background:linear-gradient(135deg,rgba(255,111,181,.28),rgba(var(--v-rgb),.28)); box-shadow:0 0 24px -6px rgba(255,111,181,.7); animation:duePulse 2.6s ease-in-out infinite; transition:transform .15s ease; }
+.hero-due:hover{ transform:translateY(-2px); }
+@keyframes duePulse{ 50%{ box-shadow:0 0 30px -2px rgba(255,111,181,.95) } }
+.hero-text > *:nth-child(8){ animation-delay:.8s; }
+.hero[data-tod="morning"]::before{ background:rgba(251,191,36,.30); }
+.hero[data-tod="morning"]::after{ background:rgba(var(--cy-rgb),.22); }
+.hero[data-tod="morning"] .hero-beam{ filter:blur(30px) hue-rotate(-70deg) saturate(1.3); }
+.hero[data-tod="evening"]::before{ background:rgba(244,114,182,.34); }
+.hero[data-tod="evening"]::after{ background:rgba(251,146,60,.20); }
+.hero[data-tod="evening"] .hero-beam{ filter:blur(30px) hue-rotate(60deg); }
+.hero[data-tod="night"]::before{ background:rgba(79,70,229,.40); }
+.hero[data-tod="night"]::after{ background:rgba(var(--cy-rgb),.20); }

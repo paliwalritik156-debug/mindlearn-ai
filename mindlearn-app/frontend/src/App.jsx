@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
 import { api, setAuthToken, sounds, isSoundOn, setSoundOn, useLocalState, useDark, Spin, ALL_FUNCTION_KEYS, toast, uploadPdfs, syncPull, syncPushSoon } from "./lib.jsx"
 
-import { savePdfs } from "./pdfstore.js"
+import { savePdfs, loadPdfJs } from "./pdfstore.js"
+import { dueItems } from "./mistakes.js"
 
 import AuthPage from "./authpage.jsx"
 import { useUiLang, UiLangToggle, StickyCta } from "./lang.jsx"
@@ -130,6 +131,28 @@ function Nav({ dark, setDark, user, onMenu, onAuth, onProfile, landing, onOpenAp
 }
 
 /* ============================= Hero / Landing ============================= */
+/* read the first page of a PDF in the browser so the hero can turn it into particles */
+async function peekPdf(file){
+  if(!file || file.size > 40 * 1024 * 1024) return null
+  try{
+    const pdfjs = await loadPdfJs()
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise
+    for(let p = 1; p <= Math.min(3, doc.numPages); p++){
+      const tc = await (await doc.getPage(p)).getTextContent()
+      const rows = new Map()
+      tc.items.forEach(it=>{ const s = (it.str || "").trim(); if(!s) return; const y = Math.round(it.transform[5] / 3); const r = rows.get(y) || []; r.push([it.transform[4], s]); rows.set(y, r) })
+      const lines = [...rows.entries()].sort((x, y)=>y[0] - x[0]).map(([, r])=>r.sort((x, y)=>x[0] - y[0]).map(z=>z[1]).join(" ").replace(/\s+/g, " ").trim()).filter(l=>l.length > 2)
+      if(lines.join("").length >= 40) return { name: file.name, lines: lines.slice(0, 24).map(l=>l.slice(0, 64)) }
+    }
+    return { name: file.name, lines: [] }
+  }catch(e){ return null }
+}
+function timeOfDay(){
+  const h = new Date().getHours()
+  return h >= 5 && h < 12 ? "morning" : h < 17 ? "afternoon" : h < 21 ? "evening" : "night"
+}
+const HELLO = { morning: "☀️ Good morning", afternoon: "🌤 Good afternoon", evening: "🌆 Good evening", night: "🌙 Burning the midnight oil" }
+
 function Hero({ onUpload, uploading, user, onAuth }){
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef()
@@ -138,6 +161,8 @@ function Hero({ onUpload, uploading, user, onAuth }){
   const { t } = useUiLang()
   const fullHeading = t("h1")
   const [spot, setSpot] = useState({ x: 50, y: 50 })
+  const tod = timeOfDay()
+  const due = (()=>{ if(!user) return 0; try{ return dueItems(JSON.parse(localStorage.getItem("ml_revenge") || "[]")).length }catch(e){ return 0 } })()
 
   useEffect(()=>{
     let i = 0
@@ -185,13 +210,19 @@ function Hero({ onUpload, uploading, user, onAuth }){
   }
 
   function handleFiles(files){
-    if(!user){ onAuth(); return }
+    if(!user){
+      // let a visitor watch their own PDF form in the hero before the sign-in screen covers it
+      if(files && files[0]) peekPdf(files[0]).then(info=>{ if(info) window.dispatchEvent(new CustomEvent("ml-hero-pdf", { detail: info })); setTimeout(onAuth, info ? 2600 : 0) })
+      else onAuth()
+      return
+    }
+    if(files && files[0]) peekPdf(files[0]).then(info=>{ if(info) window.dispatchEvent(new CustomEvent("ml-hero-pdf", { detail: info })) })
     if(files && files.length) onUpload(files)
   }
 
   return (
     <section className="hero" ref={heroRef} onMouseMove={onMove} onMouseLeave={onLeave}
-      style={{ "--spot-x": spot.x+"%", "--spot-y": spot.y+"%" }}>
+      data-tod={tod} style={{ "--spot-x": spot.x+"%", "--spot-y": spot.y+"%" }}>
       <div className="hero-spotlight" />
       <div className="hero-fade" />
       <div className="hero-grain" aria-hidden="true" />
@@ -200,6 +231,10 @@ function Hero({ onUpload, uploading, user, onAuth }){
       <div className="hero-beam" aria-hidden="true" />
       <div className="hero-grid">
         <div className="hero-text">
+          <div className="hero-hello">
+            <span>{HELLO[tod]}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}</span>
+            {due > 0 && <button type="button" className="hero-due" onClick={()=>window.dispatchEvent(new CustomEvent("ml-open-app", { detail: "pyq" }))}>⚔ {due} question{due > 1 ? "s" : ""} due in your Revenge Queue</button>}
+          </div>
           <div className="badge">{t("badge", ALL_FUNCTION_KEYS.length - 2)}</div>
           <h1 className="scramble-heading">{heading}</h1>
           <RotatingWords/>
@@ -275,8 +310,14 @@ function AskCard(){
 
 function PhaseRail(){
   const [p, setP] = useState(0)
-  useEffect(()=>{ const f = e=>setP(e.detail); window.addEventListener("ml-hero-phase", f); return ()=>window.removeEventListener("ml-hero-phase", f) },[])
-  const steps = ["📄 Your PDF", "🧠 Understood", "🃏 Flashcards"]
+  const [nm, setNm] = useState("")
+  useEffect(()=>{
+    const f = e=>setP(e.detail), g = e=>setNm(e.detail?.name || "")
+    window.addEventListener("ml-hero-phase", f); window.addEventListener("ml-hero-pdf", g)
+    return ()=>{ window.removeEventListener("ml-hero-phase", f); window.removeEventListener("ml-hero-pdf", g) }
+  },[])
+  const short = nm ? (nm.replace(/\.pdf$/i, "").length > 16 ? nm.replace(/\.pdf$/i, "").slice(0, 15) + "…" : nm.replace(/\.pdf$/i, "")) : ""
+  const steps = [short ? "📄 " + short : "📄 Your PDF", "🧠 Understood", "🃏 Flashcards"]
   return <div className="hero-phase" aria-hidden="true">{steps.map((x, i)=><span key={x} className={i === p ? "on" : ""}>{x}</span>)}</div>
 }
 
@@ -623,6 +664,7 @@ export default function App(){
   useApplyTheme()
   useSpotlight()
   const [ok, setOk] = useState(false)
+  useEffect(()=>{ const f = e=>{ setOk(true); window.scrollTo(0,0); if(e.detail) setTimeout(()=>window.dispatchEvent(new CustomEvent("ml-goto", { detail: e.detail })), 900) }; window.addEventListener("ml-open-app", f); return ()=>window.removeEventListener("ml-open-app", f) },[])
   const [user, setUser] = useLocalState("ml_user", null)
   const [showAuth, setShowAuth] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
