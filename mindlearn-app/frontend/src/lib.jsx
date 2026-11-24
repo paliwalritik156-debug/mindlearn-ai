@@ -601,5 +601,7 @@ export const SIDEBAR_GROUPS = [
   ]},
 ]
 
+/* the few tools most students use daily; shown first, everything else is folded under its group */
+export const CORE_TOOLS = ["chat","pyq","flashcards","quiz","notes","srs","weakspots"]
 export const ALL_FUNCTION_KEYS = SIDEBAR_GROUPS.flatMap(g=>g.items.map(i=>i[0]))
 export const ICON_BY_KEY = Object.fromEntries(SIDEBAR_GROUPS.flatMap(g=>g.items))

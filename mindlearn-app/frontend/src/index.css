@@ -1895,3 +1895,11 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 .hero[data-tod="evening"] .hero-beam{ filter:blur(30px) hue-rotate(60deg); }
 .hero[data-tod="night"]::before{ background:rgba(79,70,229,.40); }
 .hero[data-tod="night"]::after{ background:rgba(var(--cy-rgb),.20); }
+
+/* v41: tidy sidebar — a short "Start here" list, everything else folded */
+.sidebar-group-label.fold{ width:100%; display:flex; align-items:center; justify-content:space-between; background:none; border:0; cursor:pointer; text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); padding:6px 10px; border-radius:10px; transition:background .15s; }
+.sidebar-group-label.fold:hover{ background:rgba(255,255,255,.05); }
+.sidebar-group-label.fold em{ font-style:normal; font-size:10.5px; opacity:.55; margin-left:4px; }
+.fold-chev{ transition:transform .2s ease; opacity:.7; }
+.sidebar-group-label.fold.open .fold-chev{ transform:rotate(90deg); }
+.sidebar-group.core .sidebar-group-label{ color:var(--cy); }

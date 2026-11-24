@@ -1,5 +1,5 @@
 import { lazy, useEffect, useMemo, useRef, useState } from "react"
-import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, shareSet, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
+import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, CORE_TOOLS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, shareSet, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
 import PyqTab from "./pyq.jsx"
 import { KnowledgeMapTab, WeakSpotsTab, WeakCard, ExamTab, VoiceTab, SourceChip } from "./features.jsx"
 import { savePdfs } from "./pdfstore.js"
@@ -1088,6 +1088,7 @@ function Dashboard({ user, onLogout, onProfile }){
   const [activity, setActivity] = useLocalState("ml_activity", [])
   const [doc, setDoc] = useLocalState("ml_doc", null)
   const [collapsed, setCollapsed] = useLocalState("ml_side_collapsed", false)
+  const [sideOpen, setSideOpen] = useLocalState("ml_side_open", {})
   const [focus, setFocus] = useState(false)
   const [split, setSplit] = useState(false)
   useEffect(()=>{ const f = ()=>setSplit(v=>!v); window.addEventListener("ml-split", f); return ()=>window.removeEventListener("ml-split", f) },[])
@@ -1173,10 +1174,17 @@ function Dashboard({ user, onLogout, onProfile }){
             ))}
           </div>
         )}
-        {SIDEBAR_GROUPS.map(g=>(
-          <div className="sidebar-group" key={g.label}>
-            <div className="sidebar-group-label"><span className="si-label">{g.label}</span></div>
-            {g.items.map(([k,icon])=>(
+        {[{ label:"Start here", items: CORE_TOOLS.map(k=>[k, ICON_BY_KEY[k]]), core:true }, ...SIDEBAR_GROUPS.map(g=>({ ...g, items: g.items.filter(([k])=>!CORE_TOOLS.includes(k)) })).filter(g=>g.items.length)].map(g=>{
+          const hasActive = g.items.some(([k])=>k===tab)
+          const open = g.core || collapsed || (sideOpen[g.label] === undefined ? hasActive : sideOpen[g.label])
+          return (
+          <div className={"sidebar-group" + (g.core ? " core" : "")} key={g.label}>
+            {g.core ? <div className="sidebar-group-label"><span className="si-label">{g.label}</span></div> : (
+              <button className={"sidebar-group-label fold" + (open ? " open" : "")} aria-expanded={open} onClick={()=>setSideOpen(o=>({ ...o, [g.label]: !open }))}>
+                <span className="si-label">{g.label} <em>{g.items.length}</em></span><span className="si-label fold-chev" aria-hidden="true">›</span>
+              </button>
+            )}
+            {open && g.items.map(([k,icon])=>(
               <div key={k} className={"sidebar-item" + (tab===k?" active":"")} onClick={()=>goTo(k)}>
                 <button className="si-main" aria-current={tab===k?"page":undefined} aria-label={FUN_META[k]?.title}>
                   <span className="sidebar-icon" title={FUN_META[k]?.title} aria-hidden="true">{icon}</span><span className="si-label">{FUN_META[k]?.title}</span>
@@ -1186,7 +1194,7 @@ function Dashboard({ user, onLogout, onProfile }){
               </div>
             ))}
           </div>
-        ))}
+        )})}
         <div className="side-user">
           <button className="side-user-main" onClick={onProfile}>
             <UserAvatar initial={initial} />
