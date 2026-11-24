@@ -10,15 +10,29 @@ import { useSpotlight, ScrollProgress, Words, NavLinks, UseCases, BeforeAfter, P
 import { NotifCenter, useApplyTheme, LiveDemo, StoryScroll, FactsStrip, GrainMesh } from "./lite.jsx"
 
 import { ToastHost, UploadStrip, LegalModal } from "./production.jsx"
-const HeroScene = lazy(()=>import("./HeroScene.jsx"))
-const AmbientBG = lazy(()=>import("./AmbientBG.jsx"))
-const Dashboard = lazy(()=>import("./dashboard.jsx"))
-const StaticPage = lazy(()=>import("./pages.jsx"))
+/* after a new deploy an old tab can ask for a JS chunk that no longer exists; clear caches and reload once instead of showing a dead screen */
+function lazyRetry(f){
+  return lazy(()=>f().then(m=>{ try{ sessionStorage.removeItem("ml_chunk_reload") }catch(e){} return m }).catch(err=>{
+    try{
+      if(!sessionStorage.getItem("ml_chunk_reload")){
+        sessionStorage.setItem("ml_chunk_reload", "1")
+        const done = ()=>location.reload()
+        if(window.caches) caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))).then(done, done); else done()
+        return new Promise(()=>{})
+      }
+    }catch(e){ /* fall through */ }
+    throw err
+  }))
+}
+const HeroScene = lazyRetry(()=>import("./HeroScene.jsx"))
+const AmbientBG = lazyRetry(()=>import("./AmbientBG.jsx"))
+const Dashboard = lazyRetry(()=>import("./dashboard.jsx"))
+const StaticPage = lazyRetry(()=>import("./pages.jsx"))
 import { usePage, useHash, resetToken, isAdminRoute, sharedId } from "./route.js"
-const SharedPage = lazy(()=>import("./share.jsx"))
+const SharedPage = lazyRetry(()=>import("./share.jsx"))
 import { FeedbackButton } from "./v30.jsx"
-const AdminPage = lazy(()=>import("./v30.jsx"))
-const ResetPassword = lazy(()=>import("./reset.jsx"))
+const AdminPage = lazyRetry(()=>import("./v30.jsx"))
+const ResetPassword = lazyRetry(()=>import("./reset.jsx"))
 import { applyPerf, isLite } from "./perf.js"
 import { applyHinglish } from "./hinglish.js"
 import { startTelemetry, track } from "./telemetry.js"
