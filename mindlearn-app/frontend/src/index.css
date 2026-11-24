@@ -1824,3 +1824,13 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
 .hero-ask-src{ display:inline-block; margin-top:4px; padding:3px 9px; border-radius:99px; font-size:11px; color:var(--cy); border:1px solid rgba(var(--cy-rgb),.4); animation:heroRise .5s both; }
 @media (max-width:767px){ .hero-ask{ display:none } }
 .hero-visual .hero-float-2{ bottom:auto; top:58%; right:2%; }
+
+/* v37: demo window no longer covers the 3D PDF animation. It sits small at the bottom-left, and grows on hover. */
+@media (min-width:961px){
+  .hero-visual .demo-wt{ position:absolute; left:0; bottom:3%; width:236px; z-index:3; opacity:.96; transform-origin:bottom left;
+    transform:perspective(1100px) rotateY(calc(var(--px,0)*-7deg + 6deg)) rotateX(calc(var(--py,0)*6deg)) scale(1); transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+  .hero-visual .demo-wt:hover{ z-index:6; opacity:1; transform:perspective(1100px) rotateY(0deg) rotateX(0deg) scale(1.55); }
+  .hero-visual .hero-float-1{ top:30%; left:-2%; }
+  .hero-visual .hero-float-2{ top:62%; right:2%; }
+}
+@media (min-width:961px){ .hero-visual .demo-wt .cp-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; } }
