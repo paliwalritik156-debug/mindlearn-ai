@@ -195,6 +195,8 @@ function Hero({ onUpload, uploading, user, onAuth }){
       <div className="hero-spotlight" />
       <div className="hero-fade" />
       <div className="hero-grain" aria-hidden="true" />
+      <div className="hero-vignette" aria-hidden="true" />
+      <div className="hero-floor" aria-hidden="true" />
       <div className="hero-beam" aria-hidden="true" />
       <div className="hero-grid">
         <div className="hero-text">

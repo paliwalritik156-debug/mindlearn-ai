@@ -1834,3 +1834,48 @@ html.lite *, html.lite *::before, html.lite *::after{ animation-duration:.01ms !
   .hero-visual .hero-float-2{ top:62%; right:2%; }
 }
 @media (min-width:961px){ .hero-visual .demo-wt .cp-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; } }
+
+/* ===== v38: finish pass — cleaner, more editorial, more depth ===== */
+/* 1) headline: crisp, tight, soft glow instead of the offset ghost copies */
+.hero-text h1.scramble-heading{ font-weight:700; letter-spacing:-0.045em; line-height:.94; font-size:clamp(48px,6.6vw,104px);
+  filter:drop-shadow(0 0 28px rgba(var(--v-rgb),.35)) !important; transform:none !important; }
+.hero-rotor{ font-weight:500; letter-spacing:-.01em; }
+.hero-sub{ font-size:17px; color:color-mix(in srgb, var(--text) 62%, transparent); }
+
+/* 2) the floating wireframe shapes were fighting the headline: fade them behind the hero */
+.ambient-bg{ opacity:.28; transition:opacity .6s ease; }
+@media (max-width:960px){ .ambient-bg{ opacity:.2 } }
+
+/* 3) perspective grid floor under the 3D scene */
+.hero-floor{ position:absolute; z-index:0; left:-10%; right:-10%; bottom:-6%; height:42%; pointer-events:none; perspective:420px; overflow:hidden;
+  -webkit-mask-image:radial-gradient(ellipse 60% 85% at 50% 100%, #000 10%, transparent 75%); mask-image:radial-gradient(ellipse 60% 85% at 50% 100%, #000 10%, transparent 75%); }
+.hero-floor::before{ content:""; position:absolute; left:-50%; right:-50%; top:0; bottom:-60%; transform-origin:50% 100%; transform:rotateX(62deg);
+  background-image:linear-gradient(rgba(var(--v-rgb),.55) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--cy-rgb),.4) 1px, transparent 1px); background-size:46px 46px; animation:floorMove 5s linear infinite; }
+@keyframes floorMove{ to{ background-position:0 46px, 0 0 } }
+
+/* 4) dropzone: glass with a living gradient edge */
+.dropzone{ position:relative; border:1px solid transparent; border-radius:22px; padding:28px 26px;
+  background:linear-gradient(#0d0c18e6,#0d0c18e6) padding-box, conic-gradient(from var(--ang,0deg), rgba(var(--cy-rgb),.7), rgba(var(--v-rgb),.7), rgba(255,111,181,.6), rgba(var(--cy-rgb),.7)) border-box;
+  animation:dzSpin 7s linear infinite; box-shadow:0 30px 70px -34px rgba(var(--v-rgb),.7), inset 0 1px 0 rgba(255,255,255,.08); }
+@property --ang{ syntax:"<angle>"; inherits:false; initial-value:0deg; }
+@keyframes dzSpin{ to{ --ang:360deg } }
+.dropzone:hover{ transform:translateY(-3px) scale(1.01); }
+.dropzone.drag{ background:linear-gradient(rgba(var(--cy-rgb),.12),rgba(var(--cy-rgb),.12)) padding-box, conic-gradient(from var(--ang,0deg), #22D3EE, #fff, #22D3EE) border-box; }
+html.light .dropzone{ background:linear-gradient(#ffffffee,#ffffffee) padding-box, conic-gradient(from var(--ang,0deg), rgba(var(--cy-rgb),.7), rgba(var(--v-rgb),.7), rgba(255,111,181,.6), rgba(var(--cy-rgb),.7)) border-box; }
+
+/* 5) stats: quiet, mono, hairline separators */
+.hero-stats{ gap:0; }
+.hero-stats div{ padding:0 28px; border-left:1px solid rgba(255,255,255,.1); }
+.hero-stats div:first-child{ padding-left:0; border-left:0; }
+.hero-stats span{ font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+
+/* 6) badge + CTA polish */
+.badge{ letter-spacing:.04em; backdrop-filter:blur(8px); }
+.hero-cta-row .btn{ border-radius:999px; padding-inline:26px; }
+
+/* 7) soft vignette so edges feel cinematic */
+.hero::selection{ background:rgba(var(--v-rgb),.4) }
+.hero-vignette{ position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at 60% 45%, transparent 45%, rgba(0,0,0,.55) 100%); }
+@media (max-width:767px){ .hero-floor{ display:none } .hero-stats div{ padding:0 16px } }
+@media (prefers-reduced-motion:reduce){ .hero-floor::before,.dropzone{ animation:none } }
+html.lite .hero-floor, html.lite .hero-beam{ display:none }
