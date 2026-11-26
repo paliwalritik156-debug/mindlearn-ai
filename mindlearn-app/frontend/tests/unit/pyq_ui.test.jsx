@@ -21,7 +21,7 @@ const click = async el=>{ await act(async()=>{ el.dispatchEvent(new MouseEvent("
 const $ = (r, t)=>r.querySelector(`[data-testid="${t}"]`)
 
 describe("PYQ v33 UI", ()=>{
-  beforeEach(()=>{ for(const k in store) delete store[k]; posts.length = 0; globalThis.IS_REACT_ACT_ENVIRONMENT = true })
+  beforeEach(()=>{ localStorage.clear(); for(const k in store) delete store[k]; posts.length = 0; globalThis.IS_REACT_ACT_ENVIRONMENT = true })
   it("wrong answer -> cause chip -> DNA; queue -> revenge -> twin", async()=>{
     store.ml_pyq = { doc_id: "d", name: "Paper", exam: "general", page_from: 1, page_to: 2, total_pages: 2, answers: {}, solutions: {},
       questions: [{ id: "q1", question: "What is 2+2?", options: ["A. 3", "B. 4"], answer: "B. 4", topic: "Algebra" }] }
@@ -50,5 +50,29 @@ describe("PYQ v33 UI", ()=>{
     expect(posts).toContain("/pyq/twin")
     expect(host.textContent).toContain("twin question")
     await act(async()=>{ root2.unmount() })
+  })
+
+  it("timed mock: no feedback while running, scores on submit, wrong answers go to the Revenge Queue", async()=>{
+    store.ml_pyq = { doc_id: "d", name: "Paper", exam: "general", page_from: 1, page_to: 2, total_pages: 2, answers: {}, solutions: {},
+      questions: [1, 2, 3, 4].map(n=>({ id: "m" + n, question: "Question number " + n + " here?", options: ["A. one", "B. two"], answer: "A. one", topic: n < 3 ? "Algebra" : "Geometry" })) }
+    const host = document.createElement("div"); document.body.appendChild(host)
+    const root = createRoot(host)
+    await act(async()=>{ root.render(<PyqTab />) }); await tick()
+    await click($(host, "tab-mock")); expect($(host, "mock-setup")).toBeTruthy()
+    await click($(host, "mock-start")); expect($(host, "mock-run")).toBeTruthy(); expect($(host, "mock-clock")).toBeTruthy()
+    // answer q1 right, q2..q4 wrong
+    for(let k = 0; k < 4; k++){
+      const want = k === 0 ? "one" : "two"
+      await click([...host.querySelectorAll(".pyq-o")].find(b=>b.textContent.includes(want)))
+      expect(host.querySelector(".pyq-res")).toBeFalsy()           // no verdict while the clock runs
+      if(k < 3) await click([...host.querySelectorAll(".pyq-acts .btn")].find(b=>b.textContent.includes("Next")))
+    }
+    await click($(host, "mock-submit"))
+    const r = $(host, "mock-result"); expect(r).toBeTruthy()
+    expect(r.textContent).toContain("1")                              // 1 right
+    expect(r.textContent).toMatch(/Score \(\d+%\)/)
+    expect(JSON.parse(localStorage.getItem("ml_revenge")).length).toBe(3)   // 3 wrong -> queue
+    expect(store.ml_pyq_mocks.length).toBe(1)
+    await act(async()=>{ root.unmount() })
   })
 })

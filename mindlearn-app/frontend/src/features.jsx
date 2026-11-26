@@ -6,6 +6,7 @@ import {
 } from "./lib.jsx"
 import { useLocalState as useLS, toast as toastMsg } from "./lib.jsx"
 import { saveToNotes } from "./core.js"
+import { queueMistakes } from "./revenge.js"
 import { hasPdfs, findBest, getBuffer, loadPdfJs, pdfNames, keywordsOf } from "./pdfstore.js"
 
 function Empty({ icon, title, body, children }){
@@ -487,6 +488,7 @@ export function ExamTab(){
     const max = qs.length * st.right
     const pct = Math.max(0, Math.round(score/max*100))
     recordAnswers(qs.map((q,i)=>({ topic: topicOf(q), ok: ans[i] === q.answer, q: q.question })).filter((_,i)=>ans[i] !== undefined))
+    queueMistakes(qs.filter((q,i)=>ans[i] !== undefined && ans[i] !== q.answer), "Exam simulator")
     try{ const sc = JSON.parse(localStorage.getItem("ml_scores") || "[]"); sc.push({ date: new Date().toISOString(), pct }); localStorage.setItem("ml_scores", JSON.stringify(sc)); window.dispatchEvent(new CustomEvent("ml-ls", { detail:"ml_scores" })) }catch(e){}
     setReport({ right, wrong, skipped, score: Math.round(score*100)/100, max, pct, used: Math.min(mins*60, Math.round((Date.now() - startRef.current)/1000)), topics: Object.values(topics) })
     setPhase("report"); sounds.success()

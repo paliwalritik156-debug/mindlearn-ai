@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { api, toast, Spin, useLocalState, recordAnswers, getOutLang } from "./lib.jsx"
+import { SCHEMES, defaultMinutes, fmtClock, scorable, scoreMock, topicBreakdown } from "./mock.js"
+import { queueMistakes } from "./revenge.js"
 import { CAUSES, causeLabel, pushLog, setLogCause, addToQueue, dueItems, waitingItems, gradeItem, setItemField, daysUntil, mistakeDna, BOX_DAYS } from "./mistakes.js"
 
 /* PYQ / past-paper mode: upload a real question paper (PDF), the app pulls out the actual
@@ -361,19 +363,134 @@ function Practice({ log, setLog, queue, setQueue }){
   )
 }
 
+/* ===== Timed mock: exam conditions, no feedback until you submit ===== */
+function MockView({ goto }){
+  const [set] = useLocalState("ml_pyq", null)
+  const [hist, setHist] = useLocalState("ml_pyq_mocks", [])
+  const qs = useMemo(()=>scorable(set?.questions), [set])
+  const [phase, setPhase] = useState("setup")        // setup | run | result
+  const [scheme, setScheme] = useState(SCHEMES[0])
+  const [mins, setMins] = useState(0)
+  const [picks, setPicks] = useState({})
+  const [flags, setFlags] = useState({})
+  const [i, setI] = useState(0)
+  const [left, setLeft] = useState(0)
+  const [res, setRes] = useState(null)
+  const endAt = useRef(0), startAt = useRef(0), done = useRef(false)
+  const minutes = mins || defaultMinutes(qs.length)
+
+  function begin(){
+    setPicks({}); setFlags({}); setI(0); setRes(null); done.current = false
+    startAt.current = Date.now(); endAt.current = Date.now() + minutes * 60000; setLeft(minutes * 60); setPhase("run")
+  }
+  function submit(auto){
+    if(done.current) return; done.current = true
+    const r = scoreMock(qs, picks, scheme, sameOpt)
+    const used = Math.min(minutes * 60, Math.round((Date.now() - startAt.current) / 1000))
+    recordAnswers(r.rows.filter(x=>x.pick).map(x=>({ topic: x.q.topic, ok: x.status === "right", q: x.q.question })))
+    const added = queueMistakes(r.rows.filter(x=>x.status === "wrong").map(x=>x.q), "Timed mock")
+    setHist(h=>[...h, { at: Date.now(), name: set?.name || "", score: r.score, max: r.max, pct: r.pct }].slice(-10))
+    setRes({ ...r, used, added, auto: !!auto }); setPhase("result")
+  }
+  useEffect(()=>{
+    if(phase !== "run") return
+    const id = setInterval(()=>{
+      const s = Math.round((endAt.current - Date.now()) / 1000)
+      setLeft(s)
+      if(s <= 0) submit(true)
+    }, 500)
+    return ()=>clearInterval(id)
+  }, [phase, picks])
+
+  if(!set || qs.length < 3) return (
+    <div className="card pyq"><div className="pyq-empty">A timed mock needs a paper with at least 3 questions that have a printed answer key. Open <b>Practice</b>, load a paper first, then come back.
+      <div style={{ marginTop: 10 }}><button className="btn btn-p" onClick={()=>goto("practice")}>Go to Practice</button></div></div>
+      {set && qs.length < 3 && <p className="pyq-note small">This paper has {set.questions?.length || 0} questions but only {qs.length} with a printed answer key, so a mock can't be scored fairly.</p>}
+    </div>
+  )
+
+  if(phase === "setup") return (
+    <div className="card pyq" data-testid="mock-setup">
+      <h4 style={{ marginTop: 0 }}>⏱ Timed mock</h4>
+      <p className="pyq-note">Exam conditions: the clock runs, you get no hints, and results appear only when you submit or time runs out. Wrong answers then go to your Revenge Queue.</p>
+      <p><b>{set.name}</b> · {qs.length} scorable questions{set.questions.length > qs.length ? ` (${set.questions.length - qs.length} skipped: no printed answer key)` : ""}</p>
+      <div className="iv-row"><div>Marking: {SCHEMES.map(x=><button key={x.key} className={"chip" + (scheme.key === x.key ? " on" : "")} onClick={()=>setScheme(x)}>{x.label}</button>)}</div></div>
+      <div className="iv-row"><div>Time: {[defaultMinutes(qs.length), 30, 60, 90, 180].filter((v, k, a)=>a.indexOf(v) === k).map(m=><button key={m} className={"chip" + (minutes === m ? " on" : "")} onClick={()=>setMins(m)}>{m} min</button>)}</div></div>
+      <div className="pyq-acts"><button className="btn btn-p" onClick={begin} data-testid="mock-start">Start mock · {minutes} min</button></div>
+      {hist.length > 0 && <p className="pyq-note small">Previous mocks: {hist.slice(-5).map((h, k)=><span key={k} className="chip">{h.pct}%</span>)}</p>}
+    </div>
+  )
+
+  if(phase === "run"){
+    const q = qs[i]
+    const low = left < 300
+    return (
+      <div className="card pyq" data-testid="mock-run">
+        <div className="pyq-head">
+          <div><b>Q{i + 1} of {qs.length}</b> <span className="pyq-note small">· {q.topic}</span></div>
+          <div className={"mock-clock" + (low ? " low" : "")} data-testid="mock-clock">⏱ {fmtClock(left)}</div>
+        </div>
+        <div className="pyq-nav">
+          {qs.map((x, k)=><button key={x.id} className={"pyq-n" + (picks[x.id] ? " pick" : "") + (flags[x.id] ? " flag" : "") + (k === i ? " cur" : "")} onClick={()=>setI(k)}>{k + 1}</button>)}
+        </div>
+        <div className="pyq-q">
+          <div className="pyq-text">{q.question}</div>
+          <div className="pyq-opts">
+            {q.options.map(o=><button key={o} className={"pyq-o" + (picks[q.id] === o ? " picked" : "")} onClick={()=>setPicks(p=>({ ...p, [q.id]: o }))}>{o}</button>)}
+          </div>
+          <div className="pyq-acts">
+            <button className="btn" disabled={i === 0} onClick={()=>setI(i - 1)}>← Prev</button>
+            <button className="btn" disabled={i >= qs.length - 1} onClick={()=>setI(i + 1)}>Next →</button>
+            <button className="btn btn-ghost" onClick={()=>setPicks(p=>{ const n = { ...p }; delete n[q.id]; return n })}>Clear</button>
+            <button className={"btn btn-ghost" + (flags[q.id] ? " on" : "")} onClick={()=>setFlags(f=>({ ...f, [q.id]: !f[q.id] }))}>{flags[q.id] ? "⚑ Flagged" : "⚐ Flag for review"}</button>
+          </div>
+        </div>
+        <div className="pyq-acts" style={{ marginTop: 14 }}>
+          <span className="pyq-note small">{Object.keys(picks).length} answered · {Object.keys(flags).filter(k=>flags[k]).length} flagged</span>
+          <button className="btn btn-p" onClick={()=>{ const un = qs.length - Object.keys(picks).length; if(!un || confirm(`${un} question(s) unanswered. Submit anyway?`)) submit(false) }} data-testid="mock-submit">Submit mock</button>
+        </div>
+      </div>
+    )
+  }
+
+  const topics = topicBreakdown(res.rows)
+  return (
+    <div className="card pyq" data-testid="mock-result">
+      <h4 style={{ marginTop: 0 }}>{res.auto ? "⏰ Time's up" : "Mock submitted"}</h4>
+      <div className="ad-grid" style={{ marginTop: 0 }}>
+        <div className="ad-stat"><div className="ad-n">{res.score}<small style={{ opacity: .5 }}> / {res.max}</small></div><div className="ad-l">Score ({res.pct}%)</div></div>
+        <div className="ad-stat"><div className="ad-n">{res.right}</div><div className="ad-l">Correct</div></div>
+        <div className="ad-stat"><div className="ad-n">{res.wrong}</div><div className="ad-l">Wrong</div></div>
+        <div className="ad-stat"><div className="ad-n">{res.skipped}</div><div className="ad-l">Skipped</div></div>
+      </div>
+      <p className="pyq-note">Time used: {fmtClock(res.used)} of {minutes} min.{res.added ? ` ${res.added} wrong answer${res.added > 1 ? "s were" : " was"} added to your Revenge Queue ⚔` : ""}</p>
+      <h4>By topic (weakest first)</h4>
+      {topics.map(t=><div className="dna-row" key={t.topic}><span className="dna-l">{t.topic}</span><div className="dna-bar"><i style={{ width: t.pct + "%" }} /></div><span className="dna-n">{t.right}/{t.n}</span></div>)}
+      <h4>Review</h4>
+      {res.rows.map((x, k)=>(
+        <details key={x.q.id} className="iv-q"><summary><b>{k + 1}.</b> {x.q.question.slice(0, 90)}{x.q.question.length > 90 ? "…" : ""} <span className={"chip mock-" + x.status}>{x.status}</span></summary>
+          <p>Your answer: <b>{x.pick || "none"}</b></p><p>Correct answer: <b>{x.q.answer}</b></p>
+        </details>
+      ))}
+      <div className="pyq-acts"><button className="btn btn-p" onClick={()=>setPhase("setup")}>Another mock</button><button className="btn" onClick={()=>goto("revenge")}>⚔ Revenge Queue</button><button className="btn btn-ghost" onClick={()=>goto("dna")}>🧬 Mistake DNA</button></div>
+    </div>
+  )
+}
+
 export default function PyqTab(){
   const [view, setView] = useState("practice")
   const [log, setLog] = useLocalState("ml_mistakes", [])
   const [queue, setQueue] = useLocalState("ml_revenge", [])
   const [exam] = useState("general")
   const dueN = dueItems(queue).length
-  const tabs = [["practice", "📜 Practice"], ["dna", "🧬 Mistake DNA"], ["revenge", `⚔ Revenge Queue${dueN ? ` (${dueN} due)` : ""}`]]
+  const tabs = [["practice", "📜 Practice"], ["mock", "⏱ Timed mock"], ["dna", "🧬 Mistake DNA"], ["revenge", `⚔ Revenge Queue${dueN ? ` (${dueN} due)` : ""}`]]
   return (
     <div>
       <div className="pyq-tabs" role="tablist">
         {tabs.map(([k, l])=><button key={k} role="tab" aria-selected={view === k} className={"chip" + (view === k ? " on" : "")} onClick={()=>setView(k)} data-testid={"tab-" + k}>{l}</button>)}
       </div>
       {view === "practice" && <Practice log={log} setLog={setLog} queue={queue} setQueue={setQueue} />}
+      {view === "mock" && <MockView goto={setView} />}
       {view === "dna" && <div className="card pyq"><DnaView log={log} goto={setView} /></div>}
       {view === "revenge" && <div className="card pyq"><RevengeView queue={queue} setQueue={setQueue} goto={setView} exam={exam} /></div>}
     </div>

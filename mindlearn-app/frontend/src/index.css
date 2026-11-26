@@ -1945,3 +1945,12 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 .iv-q{ border-top:1px solid var(--card-border); padding:10px 0; } .iv-q summary{ cursor:pointer; } .iv-q p{ margin:8px 0 0 4px; line-height:1.55; }
 @media (max-width:600px){ .iv-two{ grid-template-columns:1fr } .iv-pip{ width:104px; right:8px; top:8px } }
 @media (prefers-reduced-motion:reduce){ .iv-avatar i,.iv-avatar span{ animation:none !important } }
+
+/* v43 */
+.rephrase-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:6px 0 2px 4px; font-size:12.5px; color:var(--text-dim); }
+.rephrase-row .chip{ cursor:pointer; }
+.mock-clock{ font-family:var(--font-mono); font-size:20px; padding:6px 14px; border-radius:99px; background:rgba(255,255,255,.06); border:1px solid var(--card-border); }
+.mock-clock.low{ color:#f87171; border-color:#f87171; animation:duePulse 1.2s ease-in-out infinite; }
+.pyq-n.flag{ outline:2px solid #f59e0b; outline-offset:1px; }
+.chip.mock-right{ color:#34d399; } .chip.mock-wrong{ color:#f87171; } .chip.mock-skipped{ opacity:.6; }
+.btn.on{ border-color:#f59e0b; color:#f59e0b; }

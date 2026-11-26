@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, CORE_TOOLS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, shareSet, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
 import PyqTab from "./pyq.jsx"
+import { queueMistakes } from "./revenge.js"
 import { KnowledgeMapTab, WeakSpotsTab, WeakCard, ExamTab, VoiceTab, SourceChip } from "./features.jsx"
 import { savePdfs } from "./pdfstore.js"
 import { V24Host, SwipeTab, ListenTab, SketchTab } from "./v24.jsx"
@@ -275,6 +276,15 @@ function Chat(){
           <div key={i} className={"msg " + m.role}>
             <div className="msg-body">{m.role==="assistant" ? (i===history.length-1 && m.text===freshRef.current ? <Typed text={m.text} onTick={()=>endRef.current?.scrollIntoView({ block:"end" })} /> : <Rich text={m.text} streaming={streaming && i===history.length-1} />) : m.text}</div>
             {m.role==="assistant" && <div className="msg-tools"><CopyBtn text={m.text} /><button className="btn btn-ghost btn-sm" onClick={()=>saveToNotes((history[i-1]?.text || "Chat answer").slice(0,60), m.text)}>💾 Save</button><SourceChip text={m.text} sources={m.sources} /></div>}
+            {m.role==="assistant" && i === history.length - 1 && !loading && !streaming && !String(m.text).startsWith("⚠️") && (
+              <div className="rephrase-row" data-testid="rephrase">
+                <span>Didn't get it?</span>
+                <button className="chip" onClick={()=>send("Explain that again in much simpler words, like I'm new to this.")}>🧸 Simpler</button>
+                <button className="chip" onClick={()=>send("Give me a real-life analogy for that.")}>🔗 Analogy</button>
+                <button className="chip" onClick={()=>send("Give me one worked example for that.")}>📌 Example</button>
+                <button className="chip" onClick={()=>send("Ask me one question to check if I understood that.")}>🎯 Quiz me</button>
+              </div>
+            )}
           </div>
         ))}
         {loading && <div className="msg assistant typing"><span className="typing-dots"><i/><i/><i/></span></div>}
@@ -487,6 +497,8 @@ function Quiz({ loader, autoStart = false } = {}){
     setSubmitted(true)
     setScores(s=>[...s, { date: new Date().toISOString(), pct }])
     recordAnswers(questions.map((q,i)=>({ topic: topicOf(q), ok: answers[i] === (q.answer || q.correct), q: q.question || q.q })))
+    const added = queueMistakes(questions.filter((q,i)=>answers[i] !== undefined && answers[i] !== (q.answer || q.correct)), "Quiz")
+    if(added) toast(`${added} wrong answer${added > 1 ? "s" : ""} added to your Revenge Queue ⚔`)
     if(pct >= 70){ setFire(true); sounds.success(); setTimeout(()=>setFire(false), 2000) }
     setTimeout(()=>document.querySelector(".result-card")?.scrollIntoView({ behavior:"smooth", block:"center" }), 120)
   }
