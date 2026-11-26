@@ -545,7 +545,7 @@ export const FUN_META = {
   map:         { title:"Concept Map", tag:"Your syllabus, untangled.", desc:"Builds a hierarchical map connecting the main ideas in your material.", tips:["Start from the center node and work outward.","Use it to spot gaps before writing an essay.","Export as notes to review linearly later."] },
   bookmarks:   { title:"Bookmarks", tag:"Your personal highlight reel.", desc:"Save any AI response across the app to revisit later.", tips:["Bookmark mid-session, not just at the end — you'll forget.","Search bookmarks by keyword when exam week hits.","Clear old ones each term to keep it useful."] },
   studyplan:   { title:"Study Planner", tag:"A calendar that actually wants you to succeed.", desc:"Generates a day-by-day study plan based on your deadline and material.", tips:["Be honest about how many hours a day you actually have.","Leave the last day as a light review day, not a new topic.","Re-generate the plan if you fall behind — that's normal."] },
-  interview:   { title:"Mock Interview", tag:"Practice the sweaty-palms part in private.", desc:"Simulates interview-style questions based on your subject material.", tips:["Answer out loud, not just in your head.","Ask for harder follow-ups once you're comfortable.","Review your weakest answers before the real thing."] },
+  interview:   { title:"Live Interview", tag:"Aria interviews you out loud, on camera.", desc:"Camera on, AI interviewer speaks each question, you answer by voice, and you get a scored report with pace and filler-word stats.", tips:["Answer out loud, not just in your head.","Ask for harder follow-ups once you're comfortable.","Review your weakest answers before the real thing."] },
   theme:       { title:"Theme Picker", tag:"Because beige is a crime.", desc:"Switch the app's color theme to match your mood or focus level.", tips:["Cooler tones can feel calmer for long sessions.","Your choice is saved automatically for next time.","High-contrast themes help in bright rooms."] },
   scores:      { title:"Leaderboard", tag:"Friendly competition, mostly with yourself.", desc:"Tracks your quiz scores over time so you can see real progress.", tips:["Compare this week's average to last week's.","A dip isn't failure — it usually means harder material.","Screenshot milestones to stay motivated."] },
   prompt:      { title:"Custom AI Prompt", tag:"Tell the tutor how to tutor.", desc:"Set a custom system instruction that shapes how the AI responds across the app.", tips:["Keep it short and specific — one clear instruction works best.","Reset to default if answers start feeling off.","Great for matching your professor's exact terminology."] },
@@ -602,6 +602,6 @@ export const SIDEBAR_GROUPS = [
 ]
 
 /* the few tools most students use daily; shown first, everything else is folded under its group */
-export const CORE_TOOLS = ["chat","pyq","flashcards","quiz","notes","srs","weakspots"]
+export const CORE_TOOLS = ["chat","pyq","flashcards","quiz","interview","notes","srs","weakspots"]
 export const ALL_FUNCTION_KEYS = SIDEBAR_GROUPS.flatMap(g=>g.items.map(i=>i[0]))
 export const ICON_BY_KEY = Object.fromEntries(SIDEBAR_GROUPS.flatMap(g=>g.items))

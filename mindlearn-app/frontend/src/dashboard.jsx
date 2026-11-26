@@ -1,4 +1,4 @@
-import { lazy, useEffect, useMemo, useRef, useState } from "react"
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { api, sounds, THEMES, PERSONALITIES, CODE_LANGS, ACHIEVEMENTS, TYPING_TEXTS, useLocalState, useDark, useChatHistory, useBookmarks, Spin, Skeleton, CopyBtn, VoiceInput, ProgressBar, Confetti, FUN_META, SIDEBAR_GROUPS, CORE_TOOLS, ALL_FUNCTION_KEYS, ICON_BY_KEY, toast, pushNotif, uploadPdfs, shareSet, downloadFile, printDoc, LANGS, getOutLang, langInstruction, askText, streamChat, chatJSON, chatQuestions, topicOf, recordAnswers } from "./lib.jsx"
 import PyqTab from "./pyq.jsx"
 import { KnowledgeMapTab, WeakSpotsTab, WeakCard, ExamTab, VoiceTab, SourceChip } from "./features.jsx"
@@ -752,7 +752,8 @@ function StudyPlanTab(){
 }
 
 /* ============================= Mock Interview ============================= */
-function MockInterviewTab(){ return <AIPanel fkey="interview" placeholder="What role or subject should the interview focus on?" systemHint="Act as an interviewer and ask 5 interview-style questions based on the uploaded document, for this focus:" /> }
+const InterviewLive = lazy(()=>import("./interview.jsx"))
+function MockInterviewTab(){ return <Suspense fallback={<div className="card"><Spin /></div>}><InterviewLive /></Suspense> }
 
 /* ============================= Theme Picker ============================= */
 function ThemePicker(){
