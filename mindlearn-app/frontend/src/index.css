@@ -2008,3 +2008,25 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 .room-clock b{font-size:3.6rem;font-variant-numeric:tabular-nums;line-height:1}.room-clock span{font-weight:700}.room-clock small{opacity:.65}
 .room-clock.break{background:rgba(46,204,113,.15)}.room-clock.done{background:rgba(255,200,60,.15)}
 .room-opts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* v48 polish: mobile overflow fix (flex child grew with its content) */
+.dash-main{ min-width:0; max-width:100%; }
+.dash-root{ max-width:100vw; overflow-x:clip; }
+@media (max-width:1023px){
+  .sound-toggle{ display:none; }
+  .qc{ bottom:80px; right:14px; }
+  .voice-cmd{ bottom:146px; right:18px; }
+  .fb-fab{ bottom:76px; left:12px; }
+}
+@media (max-width:1023px){
+  .side-user{ left:-300px; z-index:1001; transition:left .25s ease; }
+  .dash-sidebar.open .side-user{ left:0; }
+}
+@media (max-width:640px){ .voice-cmd{ display:none; } }
+@media (max-width:1023px){
+  body:has(.dash-sidebar.open) .bottom-nav, body:has(.dash-sidebar.open) .fb-fab, body:has(.dash-sidebar.open) .qc{ display:none; }
+}
+@media (min-width:1024px){
+  body:has(.dash-sidebar) .fb-fab{ left:296px; }
+  body:has(.dash-root.collapsed) .fb-fab{ left:92px; }
+}
