@@ -213,6 +213,7 @@ export const sounds = {
 
 // ---------------- themes ----------------
 export const THEMES = {
+  orange:  { name:"Sunrise Orange", v:"#FF7A1A", cy:"#FFC247", bg:"#0C0705", lv:"#EA580C", lcy:"#B45309", lbg:"#FFF8F0" },
   nova:    { name:"Nova Violet",  v:"#8B6BFF", cy:"#2DE3F0", bg:"#050508" },
   ember:   { name:"Ember",        v:"#FB7185", cy:"#FBBF24", bg:"#0B0708" },
   forest:  { name:"Forest",       v:"#34D399", cy:"#A3E635", bg:"#06100B" },
@@ -227,12 +228,12 @@ export function deepen(hex, amt){ const [r,g,b] = hexRgb(hex), k = 1 - amt, h = 
 export function applyTheme(key, dark){
   const t = THEMES[key] || THEMES.nova, r = document.documentElement.style
   // on a white background the bright accents (cyan, yellow...) are unreadable, so deepen them in light mode
-  const cyHex = dark ? t.cy : deepen(t.cy, 0.42), vHex = dark ? t.v : deepen(t.v, 0.1)
+  const cyHex = dark ? t.cy : (t.lcy || deepen(t.cy, 0.42)), vHex = dark ? t.v : (t.lv || deepen(t.v, 0.1))
   const [vr,vg,vb] = hexRgb(vHex), [cr,cg,cb] = hexRgb(cyHex)
   r.setProperty("--v", vHex); r.setProperty("--cy", cyHex)
   r.setProperty("--v-rgb", `${vr},${vg},${vb}`); r.setProperty("--cy-rgb", `${cr},${cg},${cb}`)
   r.setProperty("--glow-v", `rgba(${vr},${vg},${vb},0.45)`); r.setProperty("--glow-cy", `rgba(${cr},${cg},${cb},0.35)`)
-  if(dark) r.setProperty("--bg", t.bg); else r.removeProperty("--bg")
+  if(dark) r.setProperty("--bg", t.bg); else if(t.lbg){ r.setProperty("--bg", t.lbg); r.setProperty("--bg2", "#FFFFFF") } else { r.removeProperty("--bg"); r.removeProperty("--bg2") }
 }
 
 // ---------------- notification center store ----------------

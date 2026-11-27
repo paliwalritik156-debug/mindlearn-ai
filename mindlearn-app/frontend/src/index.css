@@ -561,21 +561,21 @@ html.light .nav.scrolled{ background:rgba(255,255,255,0.88); }
 html.light .hero-fade{ background:linear-gradient(100deg, var(--bg) 0%, var(--bg) 22%, rgba(247,246,251,0.7) 38%, transparent 58%); }
 @media (max-width:960px){ html.light .hero-fade{ background:linear-gradient(180deg, transparent 0%, var(--bg) 62%, var(--bg) 100%); } }
 html.light .hero-spotlight{ background:radial-gradient(420px circle at var(--spot-x) var(--spot-y), rgba(var(--v-rgb),0.12), transparent 60%); }
-html.light .badge{ color:#0E7C86; background:linear-gradient(180deg, rgba(var(--v-rgb),0.12), rgba(var(--cy-rgb),0.08)); }
+html.light .badge{ color:#C2410C; background:linear-gradient(180deg, rgba(var(--v-rgb),0.12), rgba(var(--cy-rgb),0.08)); }
 html.light .hero-float-card{ background:rgba(255,255,255,0.85); box-shadow:0 18px 36px -20px rgba(60,40,140,0.35); }
 html.light .chat-preview{ background:rgba(255,255,255,0.86); border-color:rgba(var(--v-rgb),0.3); box-shadow:0 30px 60px -30px rgba(60,40,140,0.4), 0 0 50px -30px var(--glow-v); }
 html.light .cp-bar span:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)){ background:rgba(10,10,20,0.1); }
 html.light .wt-tab.on{ background:rgba(var(--v-rgb),0.14); }
 html.light .wt-opt{ background:rgba(10,10,20,0.03); }
 html.light .wt-face{ background:rgba(var(--v-rgb),0.08); }
-html.light .cp-src{ color:#0E7C86; }
+html.light .cp-src{ color:#C2410C; }
 html.light .scramble-heading{ filter:drop-shadow(calc(var(--px,0) * -5px) calc(var(--py,0) * -4px + 4px) 0 rgba(var(--v-rgb),0.16)); }
 html.light .scroll-hint{ border-color:rgba(10,10,20,0.3); }
 html.light .sound-toggle{ background:rgba(255,255,255,0.85); }
 html.light .cursor-glow{ mix-blend-mode:multiply; background:radial-gradient(circle, rgba(var(--v-rgb),0.14), rgba(var(--cy-rgb),0.06) 45%, transparent 70%); }
 html.light .app-loader-pct{ color:var(--text-dim); }
-html.light .hero-stats b{ background:linear-gradient(135deg,#0E8F9A,#6B4BE0); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
-html.light .hero-float-card b{ color:#0E7C86; }
+html.light .hero-stats b{ background:linear-gradient(135deg,#EA580C,#B45309); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+html.light .hero-float-card b{ color:#C2410C; }
 html.light .marquee-item, html.light .mq-pill{ color:var(--text); }
 
 /* ================= v13: premium dashboard ================= */
@@ -688,7 +688,7 @@ html.light .dash-sidebar{ background:linear-gradient(180deg, rgba(255,255,255,0.
 html.light .side-user{ background:rgba(255,255,255,0.97); }
 html.light .dash-menu-fab{ background:rgba(255,255,255,0.95); }
 html.light .sidebar-item.active{ color:var(--text); }
-html.light .home-eyebrow{ color:#0E7C86; }
+html.light .home-eyebrow{ color:#C2410C; }
 html.light .tool-card{ background:rgba(255,255,255,0.7); }
 html.light .home-hero-card{ background:linear-gradient(135deg, rgba(var(--v-rgb),0.14), rgba(var(--cy-rgb),0.08) 60%, rgba(255,255,255,0.5)); }
 html.light .fpage-header{ background:linear-gradient(135deg, rgba(var(--v-rgb),0.08), rgba(255,255,255,0.6)); }
@@ -950,12 +950,12 @@ html.light .rd-ring, html.light .rd-axis{ stroke:rgba(10,10,20,0.12); }
 html.light .wb-track, html.light .exam-timer{ background:rgba(10,10,20,0.07); }
 html.light .kmap-wrap{ background:radial-gradient(60% 60% at 50% 50%, rgba(var(--v-rgb),0.14), rgba(255,255,255,0.5)); }
 html.light .lang-seg-btns{ background:rgba(10,10,20,0.03); }
-html.light .source-chip{ color:#0E7C86; }
+html.light .source-chip{ color:#C2410C; }
 @media (prefers-reduced-motion:reduce){ .rd-shape, .voice-orb span, .voice-orb i{ animation:none !important } }
 
 .rd-acc{ fill:var(--cy); font-size:11px; font-weight:600; }
 .rd-shape{ transform-origin:220px 220px !important; }
-html.light .rd-acc{ fill:#0E7C86 }
+html.light .rd-acc{ fill:#C2410C }
 
 /* ================= v16 production ================= */
 :focus-visible{ outline:2px solid var(--cy); outline-offset:2px; border-radius:6px; }
@@ -2033,45 +2033,53 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 
 /* v48 light-mode repair: readable accents, white cards, solid sidebar, real inputs */
 html.light{
-  --cy: #0A87A0; --cy-rgb: 10,135,160;
-  --amber: #B45309; --pink: #D6337F;
-  --card: #FFFFFF; --card-border: rgba(30,20,70,0.11);
+  --cy: #B45309; --cy-rgb: 180,83,9;
+  --amber: #B45309; --pink: #D6337F; --text: #2A1608; --text-dim: #6B5545;
+  --card: #FFFFFF; --card-border: rgba(70,35,10,0.11);
   --text-dim: #5A5672;
 }
-html.light .card{ background:#fff; backdrop-filter:none; box-shadow:0 1px 2px rgba(30,20,70,.06), 0 10px 26px -14px rgba(30,20,70,.18); }
+html.light .card{ background:#fff; backdrop-filter:none; box-shadow:0 1px 2px rgba(70,35,10,.06), 0 10px 26px -14px rgba(70,35,10,.18); }
 html.light .tool-card, html.light .home-hero-card, html.light .stat-card{ backdrop-filter:none; }
-html.light .stat-card{ background:#fff; border-color:rgba(30,20,70,.1); box-shadow:0 8px 22px -14px rgba(30,20,70,.2); }
-html.light .home-hero-card{ background:linear-gradient(135deg,#fff 0%,#F1ECFF 60%,#E3F6FA 100%); }
-html.light .dash-sidebar{ background:#fff; border-right:1px solid rgba(30,20,70,.1); z-index:1000; }
+html.light .stat-card{ background:#fff; border-color:rgba(70,35,10,.1); box-shadow:0 8px 22px -14px rgba(70,35,10,.2); }
+html.light .home-hero-card{ background:linear-gradient(135deg,#fff 0%,#FFEBD9 60%,#FFF3C9 100%); }
+html.light .dash-sidebar{ background:#fff; border-right:1px solid rgba(70,35,10,.1); z-index:1000; }
 html.light .side-user{ background:#fff; }
 @media (min-width:1024px){ body:has(.dash-sidebar) header .logo, body:has(.dash-sidebar) .nav .logo{ visibility:hidden; } }
-html.light input, html.light select, html.light textarea{ background:#fff; color:var(--text); border:1px solid rgba(30,20,70,.18); }
+html.light input, html.light select, html.light textarea{ background:#fff; color:var(--text); border:1px solid rgba(70,35,10,.18); }
 html.light input::placeholder, html.light textarea::placeholder{ color:#8a86a3; }
-html.light .coach-set select, html.light .coach-set input[type=date], html.light .duel-setup input, html.light .tb input, html.light .tb textarea{ background:#fff; border-color:rgba(30,20,70,.18); color:var(--text); }
-html.light .btn:not(.btn-p):not(.btn-primary){ background:#fff; color:var(--text); border-color:rgba(30,20,70,.16); }
-html.light .chip{ background:#fff; color:var(--text); border-color:rgba(30,20,70,.16); }
-html.light .coach-hero{ background:linear-gradient(135deg,#EFE9FF,#E2F6FB); }
+html.light .coach-set select, html.light .coach-set input[type=date], html.light .duel-setup input, html.light .tb input, html.light .tb textarea{ background:#fff; border-color:rgba(70,35,10,.18); color:var(--text); }
+html.light .btn:not(.btn-p):not(.btn-primary){ background:#fff; color:var(--text); border-color:rgba(70,35,10,.16); }
+html.light .chip{ background:#fff; color:var(--text); border-color:rgba(70,35,10,.16); }
+html.light .coach-hero{ background:linear-gradient(135deg,#FFEBD9,#FFF1C7); }
 html.light .coach-hero[data-phase=final]{ background:linear-gradient(135deg,#FFE9E0,#FFE0EC); }
-html.light .coach-phases i{ background:rgba(30,20,70,.06); }
-html.light .coach-bar, html.light .duel-prog, html.light .tb-m div{ background:rgba(30,20,70,.1); }
-html.light .coach-task{ border-top-color:rgba(30,20,70,.1); }
-html.light .duel-opt{ background:#fff; border-color:rgba(30,20,70,.16); color:var(--text); }
-html.light .tb-b.student, html.light .cheat-sheet, html.light .pd-ans{ background:#F4F2FA; }
-html.light .tb-b.you{ background:#E6DFFF; }
-html.light .tb-score{ background:#E7F6FA; }
-html.light .room-clock{ background:#EDE8FF; }
+html.light .coach-phases i{ background:rgba(70,35,10,.06); }
+html.light .coach-bar, html.light .duel-prog, html.light .tb-m div{ background:rgba(70,35,10,.1); }
+html.light .coach-task{ border-top-color:rgba(70,35,10,.1); }
+html.light .duel-opt{ background:#fff; border-color:rgba(70,35,10,.16); color:var(--text); }
+html.light .tb-b.student, html.light .cheat-sheet, html.light .pd-ans{ background:#FFF3E8; }
+html.light .tb-b.you{ background:#FFE0C2; }
+html.light .tb-score{ background:#FFF1D6; }
+html.light .room-clock{ background:#FFE9D4; }
 html.light .room-clock.break{ background:#DDF5E8; }
 html.light .room-clock.done{ background:#FFF1CC; }
-html.light .pd-img{ border-color:rgba(30,20,70,.15); }
-html.light .sound-toggle, html.light .voice-cmd, html.light .fb-fab{ background:#fff; color:var(--text); box-shadow:0 6px 18px -8px rgba(30,20,70,.3); }
-html.light .bottom-nav{ box-shadow:0 -6px 20px -12px rgba(30,20,70,.25); }
+html.light .pd-img{ border-color:rgba(70,35,10,.15); }
+html.light .sound-toggle, html.light .voice-cmd, html.light .fb-fab{ background:#fff; color:var(--text); box-shadow:0 6px 18px -8px rgba(70,35,10,.3); }
+html.light .bottom-nav{ box-shadow:0 -6px 20px -12px rgba(70,35,10,.25); }
 
 /* v48 light-mode landing hero */
 html.light .hero-text h1.scramble-heading{ background-image:linear-gradient(100deg,#15131F 0%,#15131F 38%,var(--cy) 52%,var(--v) 64%,#15131F 78%,#15131F 100%); }
 html.light .hero-vignette, html.light .hero-grain{ display:none; }
 html.light .hero-floor, html.light .hero-beam{ opacity:.25; }
 html.light .hero-hello, html.light .hero-hello span{ color:var(--text-dim); }
-html.light .hero-phase{ background:rgba(255,255,255,.85); border-color:rgba(30,20,70,.12); box-shadow:0 8px 22px -12px rgba(30,20,70,.25); }
+html.light .hero-phase{ background:rgba(255,255,255,.85); border-color:rgba(70,35,10,.12); box-shadow:0 8px 22px -12px rgba(70,35,10,.25); }
 html.light .hero-phase span{ color:#5A5672; }
 html.light .hero-phase span.on{ color:#fff; }
 html.light .hero-cta-row .btn-p, html.light .btn-p{ color:#fff; }
+
+/* v50 Sunrise Orange (default theme) */
+html.light .btn-p, html.light .hero-cta-row .btn-p{ background:linear-gradient(135deg,#F97316,#FB923C 55%,#FBBF24); color:#fff; text-shadow:0 1px 1px rgba(120,40,0,.25); box-shadow:0 10px 26px -10px rgba(234,88,12,.65); }
+html.light .home-hero-card{ background:linear-gradient(135deg,#FFFFFF 0%,#FFEBD9 60%,#FFE3B8 100%); }
+html.light body, html.light{ background:var(--bg); }
+html.light .stat-card b, html.light .hero-stats b{ background:linear-gradient(135deg,#EA580C,#B45309); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+html.light .hero-text h1.scramble-heading{ background-image:linear-gradient(100deg,#2A1608 0%,#2A1608 38%,#EA580C 54%,#F59E0B 66%,#2A1608 80%,#2A1608 100%); }
+html.light .card{ box-shadow:0 1px 2px rgba(70,35,10,.07), 0 12px 28px -16px rgba(120,50,10,.25); }

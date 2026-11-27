@@ -12,7 +12,7 @@ export function useApplyTheme(){
     f(); mq.addEventListener("change", f)
     return ()=>mq.removeEventListener("change", f)
   },[auto])
-  const [theme] = useLocalState("ml_theme", "nova")
+  const [theme] = useLocalState("ml_theme", "orange")
   useEffect(()=>{ applyTheme(theme, dark) },[theme, dark])
 }
 export function NotifCenter(){

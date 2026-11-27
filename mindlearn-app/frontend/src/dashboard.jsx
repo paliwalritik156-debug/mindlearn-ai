@@ -777,7 +777,7 @@ function MockInterviewTab(){ return <Suspense fallback={<div className="card"><S
 
 /* ============================= Theme Picker ============================= */
 function ThemePicker(){
-  const [theme, setTheme] = useLocalState("ml_theme", "nova")
+  const [theme, setTheme] = useLocalState("ml_theme", "orange")
   return (
     <div className="card">
       <div className="theme-grid">
