@@ -223,10 +223,13 @@ export const THEMES = {
   mono:    { name:"Mono",         v:"#A1A1AA", cy:"#E4E4E7", bg:"#070708" },
 }
 export function hexRgb(h){ const n = parseInt(h.slice(1), 16); return [(n>>16)&255, (n>>8)&255, n&255] }
+export function deepen(hex, amt){ const [r,g,b] = hexRgb(hex), k = 1 - amt, h = n=>Math.round(n * k).toString(16).padStart(2, "0"); return "#" + h(r) + h(g) + h(b) }
 export function applyTheme(key, dark){
   const t = THEMES[key] || THEMES.nova, r = document.documentElement.style
-  const [vr,vg,vb] = hexRgb(t.v), [cr,cg,cb] = hexRgb(t.cy)
-  r.setProperty("--v", t.v); r.setProperty("--cy", t.cy)
+  // on a white background the bright accents (cyan, yellow...) are unreadable, so deepen them in light mode
+  const cyHex = dark ? t.cy : deepen(t.cy, 0.42), vHex = dark ? t.v : deepen(t.v, 0.1)
+  const [vr,vg,vb] = hexRgb(vHex), [cr,cg,cb] = hexRgb(cyHex)
+  r.setProperty("--v", vHex); r.setProperty("--cy", cyHex)
   r.setProperty("--v-rgb", `${vr},${vg},${vb}`); r.setProperty("--cy-rgb", `${cr},${cg},${cb}`)
   r.setProperty("--glow-v", `rgba(${vr},${vg},${vb},0.45)`); r.setProperty("--glow-cy", `rgba(${cr},${cg},${cb},0.35)`)
   if(dark) r.setProperty("--bg", t.bg); else r.removeProperty("--bg")

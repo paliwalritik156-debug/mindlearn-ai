@@ -2030,3 +2030,48 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
   body:has(.dash-sidebar) .fb-fab{ left:296px; }
   body:has(.dash-root.collapsed) .fb-fab{ left:92px; }
 }
+
+/* v48 light-mode repair: readable accents, white cards, solid sidebar, real inputs */
+html.light{
+  --cy: #0A87A0; --cy-rgb: 10,135,160;
+  --amber: #B45309; --pink: #D6337F;
+  --card: #FFFFFF; --card-border: rgba(30,20,70,0.11);
+  --text-dim: #5A5672;
+}
+html.light .card{ background:#fff; backdrop-filter:none; box-shadow:0 1px 2px rgba(30,20,70,.06), 0 10px 26px -14px rgba(30,20,70,.18); }
+html.light .tool-card, html.light .home-hero-card, html.light .stat-card{ backdrop-filter:none; }
+html.light .stat-card{ background:#fff; border-color:rgba(30,20,70,.1); box-shadow:0 8px 22px -14px rgba(30,20,70,.2); }
+html.light .home-hero-card{ background:linear-gradient(135deg,#fff 0%,#F1ECFF 60%,#E3F6FA 100%); }
+html.light .dash-sidebar{ background:#fff; border-right:1px solid rgba(30,20,70,.1); z-index:1000; }
+html.light .side-user{ background:#fff; }
+@media (min-width:1024px){ body:has(.dash-sidebar) header .logo, body:has(.dash-sidebar) .nav .logo{ visibility:hidden; } }
+html.light input, html.light select, html.light textarea{ background:#fff; color:var(--text); border:1px solid rgba(30,20,70,.18); }
+html.light input::placeholder, html.light textarea::placeholder{ color:#8a86a3; }
+html.light .coach-set select, html.light .coach-set input[type=date], html.light .duel-setup input, html.light .tb input, html.light .tb textarea{ background:#fff; border-color:rgba(30,20,70,.18); color:var(--text); }
+html.light .btn:not(.btn-p):not(.btn-primary){ background:#fff; color:var(--text); border-color:rgba(30,20,70,.16); }
+html.light .chip{ background:#fff; color:var(--text); border-color:rgba(30,20,70,.16); }
+html.light .coach-hero{ background:linear-gradient(135deg,#EFE9FF,#E2F6FB); }
+html.light .coach-hero[data-phase=final]{ background:linear-gradient(135deg,#FFE9E0,#FFE0EC); }
+html.light .coach-phases i{ background:rgba(30,20,70,.06); }
+html.light .coach-bar, html.light .duel-prog, html.light .tb-m div{ background:rgba(30,20,70,.1); }
+html.light .coach-task{ border-top-color:rgba(30,20,70,.1); }
+html.light .duel-opt{ background:#fff; border-color:rgba(30,20,70,.16); color:var(--text); }
+html.light .tb-b.student, html.light .cheat-sheet, html.light .pd-ans{ background:#F4F2FA; }
+html.light .tb-b.you{ background:#E6DFFF; }
+html.light .tb-score{ background:#E7F6FA; }
+html.light .room-clock{ background:#EDE8FF; }
+html.light .room-clock.break{ background:#DDF5E8; }
+html.light .room-clock.done{ background:#FFF1CC; }
+html.light .pd-img{ border-color:rgba(30,20,70,.15); }
+html.light .sound-toggle, html.light .voice-cmd, html.light .fb-fab{ background:#fff; color:var(--text); box-shadow:0 6px 18px -8px rgba(30,20,70,.3); }
+html.light .bottom-nav{ box-shadow:0 -6px 20px -12px rgba(30,20,70,.25); }
+
+/* v48 light-mode landing hero */
+html.light .hero-text h1.scramble-heading{ background-image:linear-gradient(100deg,#15131F 0%,#15131F 38%,var(--cy) 52%,var(--v) 64%,#15131F 78%,#15131F 100%); }
+html.light .hero-vignette, html.light .hero-grain{ display:none; }
+html.light .hero-floor, html.light .hero-beam{ opacity:.25; }
+html.light .hero-hello, html.light .hero-hello span{ color:var(--text-dim); }
+html.light .hero-phase{ background:rgba(255,255,255,.85); border-color:rgba(30,20,70,.12); box-shadow:0 8px 22px -12px rgba(30,20,70,.25); }
+html.light .hero-phase span{ color:#5A5672; }
+html.light .hero-phase span.on{ color:#fff; }
+html.light .hero-cta-row .btn-p, html.light .btn-p{ color:#fff; }
