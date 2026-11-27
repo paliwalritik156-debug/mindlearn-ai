@@ -3,6 +3,7 @@ import { api, setAuthToken, sounds, isSoundOn, setSoundOn, useLocalState, useDar
 
 import { savePdfs, loadPdfJs } from "./pdfstore.js"
 import { dueItems } from "./mistakes.js"
+import { daysLeft, countdownLabel } from "./coach.js"
 
 import AuthPage from "./authpage.jsx"
 import { useUiLang, UiLangToggle, StickyCta } from "./lang.jsx"
@@ -176,6 +177,7 @@ function Hero({ onUpload, uploading, user, onAuth }){
   const fullHeading = t("h1")
   const [spot, setSpot] = useState({ x: 50, y: 50 })
   const tod = timeOfDay()
+  const [coachDays, coachExam] = (()=>{ try{ const c = JSON.parse(localStorage.getItem("ml_coach") || "null"); return c?.date ? [daysLeft(c.date), c.exam || "Exam"] : [null, ""] }catch(e){ return [null, ""] } })()
   const due = (()=>{ if(!user) return 0; try{ return dueItems(JSON.parse(localStorage.getItem("ml_revenge") || "[]")).length }catch(e){ return 0 } })()
 
   useEffect(()=>{
@@ -247,6 +249,7 @@ function Hero({ onUpload, uploading, user, onAuth }){
         <div className="hero-text">
           <div className="hero-hello">
             <span>{HELLO[tod]}{user?.name ? `, ${user.name.split(" ")[0]}` : ""}</span>
+            {coachDays != null && coachDays >= 0 && <button type="button" className="hero-due" onClick={()=>window.dispatchEvent(new CustomEvent("ml-open-app", { detail: "coach" }))}>⏳ {countdownLabel(coachDays, coachExam)}</button>}
             {due > 0 && <button type="button" className="hero-due" onClick={()=>window.dispatchEvent(new CustomEvent("ml-open-app", { detail: "pyq" }))}>⚔ {due} question{due > 1 ? "s" : ""} due in your Revenge Queue</button>}
           </div>
           <div className="badge">{t("badge", ALL_FUNCTION_KEYS.length - 2)}</div>

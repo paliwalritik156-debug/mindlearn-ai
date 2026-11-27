@@ -562,6 +562,7 @@ export const FUN_META = {
   algorithm:   { title:"Algorithm Visualizer", tag:"Watch the logic, don't just read it.", desc:"Explains an algorithm step-by-step in plain language.", tips:["Ask for the time complexity if it's not mentioned.","Trace through a tiny example by hand alongside the explanation.","Great prep for whiteboard-style interview questions."] },
   knowledge:   { title:"3D Knowledge Map", tag:"Your PDF as a galaxy of ideas.", desc:"Turns the main concepts in your document into an interactive 3D map. Drag to rotate, click any idea to explain it, quiz yourself or make flashcards.", tips:["Drag to orbit, scroll or pinch to zoom.","Click a concept, then use Explain, Quiz me or Flashcards.","Rebuild the map after uploading a new PDF."] },
   pyq:         { title:"PYQ Practice", tag:"Past papers, but with a tutor beside you.", desc:"Upload a real past paper. MindLearn pulls out its multiple-choice questions, lets you attempt them and explains each answer step by step.", tips:["Upload the question paper itself, not just the answer key.","It reads 12 pages at a time; tap 'Read next pages' for more.","Wrong answers appear in your Weak-Spot Radar."] },
+  coach:       { title:"Exam Coach", tag:"Countdown, daily plan, no guesswork.", desc:"Set your exam date and daily hours. Get a phase-wise plan (Build, Practice, Revise, Final) built from your due mistakes, weak topics and mock history.", tips:["Set the real exam date and honest hours per day.","Tick tasks as you finish them to keep your streak.","Take a timed mock weekly so the plan can adapt."] },
   weakspots:   { title:"Weak-Spot Radar", tag:"Know exactly where you slip.", desc:"Tracks which topics you get wrong across quizzes and exams, shows them on a radar, and builds a practice quiz from your weakest topics.", tips:["Take a few quizzes first so there is data to analyse.","Topics are auto-detected from each question.","Practice weak spots a little every day."] },
   exam:        { title:"Exam Simulator", tag:"A real paper, a real clock.", desc:"Generates a timed paper from your PDF with negative marking, a question navigator and a full report at the end.", tips:["Pick the style closest to your exam.","Mark tricky questions for review and come back to them.","Read the report: topic breakdown shows what to revise."] },
   swipe:       { title:"Swipe Cards", tag:"Review flashcards Tinder-style.", desc:"Swipe right when you remember, left when you don't. Your review schedule updates automatically.", tips:["Tap the card to flip it.","Use ← → and Space on a keyboard.","Cards you forget come back tomorrow."] },
@@ -591,7 +592,7 @@ export const SIDEBAR_GROUPS = [
     ["youtube","📺"],["essay","✍️"],["compare","⚔️"],["image","🖼️"],["studyplan","🗓️"],["pomodoro","⏱️"],["prompt","⚙️"],["theme","🎨"],["reading","📖"],
   ]},
   { label:"Smart Lab", items:[
-    ["knowledge","🌌"],["weakspots","🎯"],["exam","📝"],["voice","🎙️"],
+    ["coach","⏳"],["knowledge","🌌"],["weakspots","🎯"],["exam","📝"],["voice","🎙️"],
   ]},
   { label:"Progress", items:[
     ["achievements","🏆"],["scores","📈"],
@@ -602,6 +603,6 @@ export const SIDEBAR_GROUPS = [
 ]
 
 /* the few tools most students use daily; shown first, everything else is folded under its group */
-export const CORE_TOOLS = ["chat","pyq","flashcards","quiz","interview","notes","srs","weakspots"]
+export const CORE_TOOLS = ["chat","pyq","flashcards","quiz","interview","notes","srs","weakspots","coach"]
 export const ALL_FUNCTION_KEYS = SIDEBAR_GROUPS.flatMap(g=>g.items.map(i=>i[0]))
 export const ICON_BY_KEY = Object.fromEntries(SIDEBAR_GROUPS.flatMap(g=>g.items))
