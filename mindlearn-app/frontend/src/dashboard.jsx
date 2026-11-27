@@ -353,7 +353,7 @@ function ScoreRing({ pct }){
   return (
     <div className="score-ring">
       <svg viewBox="0 0 120 120" width="132" height="132">
-        <defs><linearGradient id="srg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2DE3F0"/><stop offset="1" stopColor="#8B6BFF"/></linearGradient></defs>
+        <defs><linearGradient id="srg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--cy)"/><stop offset="1" stopColor="var(--v)"/></linearGradient></defs>
         <circle cx="60" cy="60" r={R} className="sr-track" />
         <circle cx="60" cy="60" r={R} className="sr-fill" strokeDasharray={C} strokeDashoffset={C*(1 - v/100)} transform="rotate(-90 60 60)" />
       </svg>
@@ -777,7 +777,7 @@ function MockInterviewTab(){ return <Suspense fallback={<div className="card"><S
 
 /* ============================= Theme Picker ============================= */
 function ThemePicker(){
-  const [theme, setTheme] = useLocalState("ml_theme", "orange")
+  const [theme, setTheme] = useLocalState("ml_theme", "nova")
   return (
     <div className="card">
       <div className="theme-grid">
@@ -1300,8 +1300,8 @@ function ScoreLine({ scores }){
       {pts.length >= 2 ? (
         <svg className="score-line" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
           <defs>
-            <linearGradient id="slg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#8B6BFF"/><stop offset="1" stopColor="#2DE3F0"/></linearGradient>
-            <linearGradient id="sla" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#8B6BFF" stopOpacity="0.35"/><stop offset="1" stopColor="#8B6BFF" stopOpacity="0"/></linearGradient>
+            <linearGradient id="slg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="var(--v)"/><stop offset="1" stopColor="var(--cy)"/></linearGradient>
+            <linearGradient id="sla" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--v)" stopOpacity="0.35"/><stop offset="1" stopColor="var(--v)" stopOpacity="0"/></linearGradient>
           </defs>
           {[25,50,75].map(g=><line key={g} x1="0" x2={W} y1={H-8-g/100*(H-16)} y2={H-8-g/100*(H-16)} className="sl-grid"/>)}
           <polygon points={`${xy[0][0]},${H} ${line} ${xy[xy.length-1][0]},${H}`} fill="url(#sla)" />

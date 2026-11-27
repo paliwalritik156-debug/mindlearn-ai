@@ -2083,3 +2083,7 @@ html.light body, html.light{ background:var(--bg); }
 html.light .stat-card b, html.light .hero-stats b{ background:linear-gradient(135deg,#EA580C,#B45309); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
 html.light .hero-text h1.scramble-heading{ background-image:linear-gradient(100deg,#2A1608 0%,#2A1608 38%,#EA580C 54%,#F59E0B 66%,#2A1608 80%,#2A1608 100%); }
 html.light .card{ box-shadow:0 1px 2px rgba(70,35,10,.07), 0 12px 28px -16px rgba(120,50,10,.25); }
+
+/* v51: light mode = orange everywhere (logo, hero demo video); dark mode untouched */
+html.light{ --logo-a:#F97316; --logo-b:#F59E0B; }
+html.light .wt-video{ filter:hue-rotate(128deg) saturate(1.25) brightness(1.05); }

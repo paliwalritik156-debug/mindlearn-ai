@@ -14,7 +14,7 @@ function MiniRing({ pct, size = 86, label, sub }){
   return (
     <div className="mini-ring" style={{ width:size, height:size }}>
       <svg viewBox="0 0 90 90" width={size} height={size}>
-        <defs><linearGradient id="mrg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2DE3F0"/><stop offset="1" stopColor="#8B6BFF"/></linearGradient></defs>
+        <defs><linearGradient id="mrg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--cy)"/><stop offset="1" stopColor="var(--v)"/></linearGradient></defs>
         <circle cx="45" cy="45" r={R} fill="none" stroke="rgba(139,107,255,.18)" strokeWidth="8" />
         <circle cx="45" cy="45" r={R} fill="none" stroke="url(#mrg)" strokeWidth="8" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - v/100)} transform="rotate(-90 45 45)" style={{ transition:"stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)" }} />
       </svg>

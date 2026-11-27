@@ -16,7 +16,7 @@ const dayKey = t => new Date(t).toDateString()
 const notify = k => window.dispatchEvent(new CustomEvent("ml-ls", { detail: k }))
 
 export function AccentPicker(){
-  const [theme, setTheme] = useLocalState("ml_theme", "orange")
+  const [theme, setTheme] = useLocalState("ml_theme", "nova")
   return (
     <div className="accent-row" role="radiogroup" aria-label="Accent colour">
       {Object.entries(THEMES).map(([k, t])=>(

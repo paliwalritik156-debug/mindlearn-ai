@@ -226,7 +226,9 @@ export const THEMES = {
 export function hexRgb(h){ const n = parseInt(h.slice(1), 16); return [(n>>16)&255, (n>>8)&255, n&255] }
 export function deepen(hex, amt){ const [r,g,b] = hexRgb(hex), k = 1 - amt, h = n=>Math.round(n * k).toString(16).padStart(2, "0"); return "#" + h(r) + h(g) + h(b) }
 export function applyTheme(key, dark){
-  const t = THEMES[key] || THEMES.nova, r = document.documentElement.style
+  const t0 = THEMES[key] || THEMES.nova, r = document.documentElement.style
+  // Light mode wears Sunrise Orange for the default theme; dark mode stays exactly as before.
+  const t = (!dark && (key === "nova" || !THEMES[key])) ? { ...t0, lv: THEMES.orange.lv, lcy: THEMES.orange.lcy, lbg: THEMES.orange.lbg } : t0
   // on a white background the bright accents (cyan, yellow...) are unreadable, so deepen them in light mode
   const cyHex = dark ? t.cy : (t.lcy || deepen(t.cy, 0.42)), vHex = dark ? t.v : (t.lv || deepen(t.v, 0.1))
   const [vr,vg,vb] = hexRgb(vHex), [cr,cg,cb] = hexRgb(cyHex)

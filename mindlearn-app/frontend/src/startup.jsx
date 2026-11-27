@@ -376,9 +376,9 @@ export function ProfilePanel({ user, onClose, onLogout }){
 export function Logo({ size = 28, id = "lgm" }){
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true" className="logo-mark">
-      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2DE3F0"/><stop offset="1" stopColor="#8B6BFF"/></linearGradient></defs>
+      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" style={{ stopColor: "var(--logo-a, #2DE3F0)" }}/><stop offset="1" style={{ stopColor: "var(--logo-b, #8B6BFF)" }}/></linearGradient></defs>
       <path d="M15 47V25q0-4.4 3.6-2L32 36.5 45.4 23q3.6-2.4 3.6 2v22" fill="none" stroke={`url(#${id})`} strokeWidth="5.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M32 6.5l2 5.5 5.5 2-5.5 2-2 5.5-2-5.5-5.5-2 5.5-2z" fill="#2DE3F0" />
+      <path d="M32 6.5l2 5.5 5.5 2-5.5 2-2 5.5-2-5.5-5.5-2 5.5-2z" style={{ fill: "var(--logo-a, #2DE3F0)" }} />
     </svg>
   )
 }

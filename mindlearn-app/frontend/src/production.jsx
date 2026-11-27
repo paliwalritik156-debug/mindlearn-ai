@@ -272,7 +272,7 @@ function AccountSecurity(){
 export function SettingsTab(){
   const [dark, setDark] = useDark()
   const [lang, setLang] = useLocalState("ml_outlang", "en")
-  const [theme, setTheme] = useLocalState("ml_theme", "orange")
+  const [theme, setTheme] = useLocalState("ml_theme", "nova")
   const [auto, setAuto] = useLocalState("ml_theme_auto", false)
   const [profile, setProfile] = useLocalState("ml_profile", null)
   const [sound, setSound] = useState(isSoundOn())

@@ -1,13 +1,18 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 
+const LMAP = { 0x22D3EE: 0xFFB020, 0x8B6BFF: 0xFF6A1A, 0xFF6FB5: 0xFF4D2E, 0x7C5CFC: 0xF97316, 0x9C8CFF: 0xFFA85C, 0x4C3CBF: 0xC2410C, 0xCFC9FF: 0xFFB98A, 0x2DE3F0: 0xFFC247 }
+const isLight = ()=>typeof document !== "undefined" && document.documentElement.classList.contains("light")
 export default function HeroScene({ energy = false }){
+  const [light, setLight] = useState(isLight())
+  useEffect(()=>{ const o = new MutationObserver(()=>setLight(isLight())); o.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); return ()=>o.disconnect() }, [])
   const mountRef = useRef()
   const energyRef = useRef(energy)
   energyRef.current = energy
   useEffect(()=>{
     const mount = mountRef.current
     if(!mount) return
+    const L = light, K = h=>L ? (LMAP[h] ?? h) : h
     const lowPower = window.innerWidth < 768 || window.matchMedia("(prefers-reduced-motion: reduce)").matches
     if(lowPower) return
 
@@ -29,7 +34,7 @@ export default function HeroScene({ energy = false }){
     }
     const starGeo = new THREE.BufferGeometry()
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos,3))
-    const starMat = new THREE.PointsMaterial({ color:0xCFC9FF, size:0.22, transparent:true, opacity:0.5 })
+    const starMat = new THREE.PointsMaterial({ color:K(0xCFC9FF), size:0.22, transparent:true, opacity:0.5 })
     const stars = new THREE.Points(starGeo, starMat)
     scene.add(stars)
 
@@ -41,10 +46,10 @@ export default function HeroScene({ energy = false }){
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.5)
     scene.add(ambient)
-    const pLight1 = new THREE.PointLight(0x7C5CFC, 2.2, 100)
+    const pLight1 = new THREE.PointLight(K(0x7C5CFC), 2.2, 100)
     pLight1.position.set(15, 10, 15)
     scene.add(pLight1)
-    const pLight2 = new THREE.PointLight(0x22D3EE, 2.0, 100)
+    const pLight2 = new THREE.PointLight(K(0x22D3EE), 2.0, 100)
     pLight2.position.set(-15, -10, 10)
     scene.add(pLight2)
 
@@ -65,7 +70,7 @@ export default function HeroScene({ energy = false }){
     const nodeArr = new Float32Array(nodePositions.length*3)
     nodePositions.forEach((p,i)=>{ nodeArr[i*3]=p.x; nodeArr[i*3+1]=p.y; nodeArr[i*3+2]=p.z })
     nodeGeo.setAttribute("position", new THREE.BufferAttribute(nodeArr,3))
-    const nodeMat = new THREE.PointsMaterial({ color:0x9C8CFF, size:0.35, transparent:true, opacity:0.85 })
+    const nodeMat = new THREE.PointsMaterial({ color:K(0x9C8CFF), size:0.35, transparent:true, opacity:0.85 })
     const points = new THREE.Points(nodeGeo, nodeMat)
     outerGroup.add(points)
 
@@ -81,7 +86,7 @@ export default function HeroScene({ energy = false }){
     }
     const edgeGeo = new THREE.BufferGeometry()
     edgeGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(edgePositions),3))
-    const edgeMat = new THREE.LineBasicMaterial({ color:0x4C3CBF, transparent:true, opacity:0.22 })
+    const edgeMat = new THREE.LineBasicMaterial({ color:K(0x4C3CBF), transparent:true, opacity:0.22 })
     const edges = new THREE.LineSegments(edgeGeo, edgeMat)
     outerGroup.add(edges)
     scene.add(outerGroup)
@@ -89,7 +94,7 @@ export default function HeroScene({ energy = false }){
     // center torus knot
     const centerGroup = new THREE.Group()
     const glowGeo = new THREE.IcosahedronGeometry(5.2, 1)
-    const glowMat = new THREE.MeshBasicMaterial({ color:0x7C5CFC, transparent:true, opacity:0.06, side:THREE.BackSide })
+    const glowMat = new THREE.MeshBasicMaterial({ color:K(0x7C5CFC), transparent:true, opacity:0.06, side:THREE.BackSide })
     const glowMesh = new THREE.Mesh(glowGeo, glowMat)
     centerGroup.add(glowMesh)
 
@@ -103,7 +108,7 @@ export default function HeroScene({ energy = false }){
         void main(){
           float f = pow(1.0 - max(dot(normalize(vN), normalize(vV)), 0.0), 2.2);
           float t = uTime*0.35 + vP.x*0.12 + vP.y*0.09;
-          vec3 a = vec3(0.13,0.83,0.93), b = vec3(0.49,0.36,0.99), c = vec3(1.0,0.44,0.71);
+          vec3 a = vec3(${L?"1.0,0.69,0.13":"0.13,0.83,0.93"}), b = vec3(${L?"1.0,0.42,0.10":"0.49,0.36,0.99"}), c = vec3(${L?"1.0,0.30,0.18":"1.0,0.44,0.71"});
           vec3 rim = mix(mix(a,b,0.5+0.5*sin(t)), c, 0.5+0.5*sin(t*0.7+2.0));
           float stripe = 0.5 + 0.5*sin(vP.y*2.2 + uTime*1.3);
           vec3 body = vec3(0.035,0.03,0.09) + b*0.10*stripe;
@@ -115,7 +120,7 @@ export default function HeroScene({ energy = false }){
     centerGroup.add(coreMesh)
 
     const wireGeo = new THREE.TorusKnotGeometry(3.75, 1.18, 90, 12)
-    const wireMat = new THREE.MeshBasicMaterial({ color:0x22D3EE, wireframe:true, transparent:true, opacity:0.35 })
+    const wireMat = new THREE.MeshBasicMaterial({ color:K(0x22D3EE), wireframe:true, transparent:true, opacity:0.35 })
     const wireMesh = new THREE.Mesh(wireGeo, wireMat)
     centerGroup.add(wireMesh)
 
@@ -138,7 +143,7 @@ export default function HeroScene({ energy = false }){
     nodeMat.map = dotTex; nodeMat.alphaTest = 0.08; nodeMat.size = 0.5; nodeMat.needsUpdate = true
     const GCOUNT = 1600
     const gPos = new Float32Array(GCOUNT*3), gCol = new Float32Array(GCOUNT*3)
-    const cA = new THREE.Color(0x22D3EE), cB = new THREE.Color(0x8B6BFF), cC = new THREE.Color(0xFF6FB5)
+    const cA = new THREE.Color(K(0x22D3EE)), cB = new THREE.Color(K(0x8B6BFF)), cC = new THREE.Color(K(0xFF6FB5))
     for(let i=0;i<GCOUNT;i++){
       const arm = i % 3, rr = 5 + Math.pow(Math.random(), 0.7) * 11
       const ang = rr * 0.55 + arm * (Math.PI*2/3) + (Math.random()-0.5) * 0.5
@@ -231,7 +236,7 @@ export default function HeroScene({ energy = false }){
           vec2 d = p.xy - uMouse; float dl = length(d);                       // cursor pushes dust away
           p.xy += normalize(d + 0.0001) * smoothstep(3.6, 0.0, dl) * 2.6;
           p.z += smoothstep(3.6, 0.0, dl) * 1.6;
-          vec3 cPage = vec3(0.78,0.92,1.0), cMind = vec3(0.55,0.42,1.0), cCard = vec3(1.0,0.50,0.75);
+          vec3 cPage = vec3(${L?"1.0,0.82,0.55":"0.78,0.92,1.0"}), cMind = vec3(${L?"1.0,0.45,0.12":"0.55,0.42,1.0"}), cCard = vec3(${L?"1.0,0.30,0.22":"1.0,0.50,0.75"});
           vec3 c0 = pick(i0, cPage, cMind, cCard), c1 = pick(i1, cPage, cMind, cCard);
           vCol = mix(c0, c1, e) + vec3(0.0,0.25,0.3) * smoothstep(0.55, 1.0, aR.x) * 0.5;
           vA = 0.55 + 0.45*aR.y + uBoost*0.3;
@@ -307,9 +312,9 @@ export default function HeroScene({ energy = false }){
     // orbiting rings with travelling light beads (adds a sense of time/motion)
     const orbitGroup = new THREE.Group()
     const orbitDefs = [
-      { r:7.2, tilt:[1.1, 0.2],  color:0x2DE3F0, speed:0.7 },
-      { r:8.8, tilt:[0.4, 0.9],  color:0x8B6BFF, speed:-0.5 },
-      { r:10.4, tilt:[1.4, -0.6], color:0xFF6FB5, speed:0.35 },
+      { r:7.2, tilt:[1.1, 0.2],  color:K(0x2DE3F0), speed:0.7 },
+      { r:8.8, tilt:[0.4, 0.9],  color:K(0x8B6BFF), speed:-0.5 },
+      { r:10.4, tilt:[1.4, -0.6], color:K(0xFF6FB5), speed:0.35 },
     ]
     const orbitDisposables = []
     const beads = orbitDefs.map(def=>{
@@ -448,7 +453,7 @@ export default function HeroScene({ energy = false }){
       gGeo.dispose(); gMat.dispose(); dotTex.dispose(); glowTex.dispose(); glowSprite.material.dispose()
       renderer.dispose()
     }
-  },[])
+  },[light])
 
   return <div ref={mountRef} style={{ position:"absolute", inset:0, zIndex:1, pointerEvents:"none" }} />
 }

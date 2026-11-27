@@ -328,7 +328,7 @@ function Radar({ items }){
   const poly = items.map((it,i)=>pt(i, Math.max(0.04, it.acc/100)).join(",")).join(" ")
   return (
     <svg className="radar" viewBox={`0 0 ${S} ${S}`}>
-      <defs><linearGradient id="rdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2DE3F0" stopOpacity="0.55"/><stop offset="1" stopColor="#8B6BFF" stopOpacity="0.55"/></linearGradient></defs>
+      <defs><linearGradient id="rdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--cy)" stopOpacity="0.55"/><stop offset="1" stopColor="var(--v)" stopOpacity="0.55"/></linearGradient></defs>
       {[0.25,0.5,0.75,1].map(f=>(
         <polygon key={f} className="rd-ring" points={items.map((_,i)=>pt(i,f).join(",")).join(" ")} />
       ))}
@@ -429,7 +429,7 @@ function Ring({ pct }){
   return (
     <div className="score-ring">
       <svg viewBox="0 0 120 120" width="132" height="132">
-        <defs><linearGradient id="srg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2DE3F0"/><stop offset="1" stopColor="#8B6BFF"/></linearGradient></defs>
+        <defs><linearGradient id="srg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--cy)"/><stop offset="1" stopColor="var(--v)"/></linearGradient></defs>
         <circle cx="60" cy="60" r={R} className="sr-track" />
         <circle cx="60" cy="60" r={R} className="sr-fill" style={{ stroke:"url(#srg2)" }} strokeDasharray={C} strokeDashoffset={C*(1 - v/100)} transform="rotate(-90 60 60)" />
       </svg>
