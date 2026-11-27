@@ -2000,3 +2000,11 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 /* v46 */
 .cheat-sheet{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.05);font-size:.9rem;columns:2 260px;column-gap:22px}
 .cheat-sheet h3{margin:10px 0 4px;font-size:1rem;break-after:avoid}.cheat-sheet ul{margin:0 0 6px;padding-left:18px}.cheat-sheet li{margin:2px 0}
+
+/* v47 */
+.pd-img{max-width:100%;max-height:320px;border-radius:12px;justify-self:start;border:1px solid rgba(255,255,255,.12)}
+.pd-ans{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.06)}.pd-ans p{margin:4px 0}
+.room-clock{display:grid;gap:4px;padding:18px;border-radius:18px;background:rgba(124,92,255,.15)}
+.room-clock b{font-size:3.6rem;font-variant-numeric:tabular-nums;line-height:1}.room-clock span{font-weight:700}.room-clock small{opacity:.65}
+.room-clock.break{background:rgba(46,204,113,.15)}.room-clock.done{background:rgba(255,200,60,.15)}
+.room-opts{display:flex;gap:8px;flex-wrap:wrap}

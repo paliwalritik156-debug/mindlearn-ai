@@ -29,8 +29,9 @@ const HeroScene = lazyRetry(()=>import("./HeroScene.jsx"))
 const AmbientBG = lazyRetry(()=>import("./AmbientBG.jsx"))
 const Dashboard = lazyRetry(()=>import("./dashboard.jsx"))
 const StaticPage = lazyRetry(()=>import("./pages.jsx"))
-import { usePage, useHash, resetToken, isAdminRoute, sharedId, duelId } from "./route.js"
+import { usePage, useHash, resetToken, isAdminRoute, sharedId, duelId, roomId } from "./route.js"
 const SharedPage = lazyRetry(()=>import("./share.jsx"))
+const RoomPage = lazyRetry(()=>import("./room.jsx").then(m=>({ default: m.RoomPage })))
 const DuelPage = lazyRetry(()=>import("./duel.jsx").then(m=>({ default: m.DuelPage })))
 import { FeedbackButton } from "./v30.jsx"
 const AdminPage = lazyRetry(()=>import("./v30.jsx"))
@@ -809,7 +810,9 @@ export default function App(){
       {!online && <div className="offline-bar" role="status">📴 You're offline. Flashcards, notes, planner and sketch still work.</div>}
       <Nav onOpenApp={()=>setOk(true)} dark={dark} setDark={setDark} user={user} onMenu={()=>window.dispatchEvent(new Event("ml-menu"))} onAuth={()=>requestAuth(null)} onProfile={()=>setShowProfile(true)} landing={!ok} />
 
-      {duelId() ? (
+      {roomId() ? (
+        <Suspense fallback={null}><RoomPage id={roomId()} /></Suspense>
+      ) : duelId() ? (
         <Suspense fallback={null}><DuelPage id={duelId()} /></Suspense>
       ) : sharedId() ? (
         <Suspense fallback={null}><SharedPage id={sharedId()} /></Suspense>

@@ -189,6 +189,23 @@ ok("pyq solve bad json -> 502", c.post("/pyq/solve", json={"question": "What is 
 ok("pyq solve empty -> 400", c.post("/pyq/solve", json={"question": ""}).status_code == 400)
 
 
+# --- v47: photo doubt ---
+class _FakeVision:
+    def __init__(s, txt=None, boom=False): s.txt, s.boom = txt, boom
+    def invoke(s, msgs):
+        if s.boom: raise RuntimeError("model gone")
+        seen = msgs[0].content; assert isinstance(seen, list) and seen[1]["type"] == "image_url"
+        return types.SimpleNamespace(content=s.txt)
+IMG = "data:image/jpeg;base64,/9j/4AAQSkZJRg=="
+main._vision = _FakeVision("Question: 2+2\n1. add\nFinal answer: 4\nConcept: addition")
+r = c.post("/doubt/photo", json={"image": IMG, "note": "class 5"}); ok("photo doubt returns answer", r.status_code == 200 and "Final answer: 4" in r.json()["answer"], r.text)
+ok("photo doubt rejects non-image", c.post("/doubt/photo", json={"image": "http://evil/x.png"}).status_code == 400)
+ok("photo doubt rejects huge", c.post("/doubt/photo", json={"image": "data:image/png;base64," + "A" * 4_600_000}).status_code == 413)
+main._vision = _FakeVision(boom=True); ok("photo doubt model error -> 502", c.post("/doubt/photo", json={"image": IMG}).status_code == 502)
+main._vision = _FakeVision("  ");  ok("photo doubt empty -> 502", c.post("/doubt/photo", json={"image": IMG}).status_code == 502)
+main._vision = None
+
+
 # --- v31: share links ---
 deck = [{"q": "Capital of India?", "a": "New Delhi"}, {"term": "H2O", "definition": "Water"}, {"q": "", "a": "x"}]
 r = c.post("/share", json={"kind": "flashcards", "title": "GK", "items": deck}); sid = r.json().get("id")

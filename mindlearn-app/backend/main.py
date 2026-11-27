@@ -684,6 +684,41 @@ def pyq_extract(req: PyqExtractRequest, user: dict = Depends(ai_guard)):
     jid = _start_job(uid, lambda progress: _pyq_extract(uid, req, progress), "Another task is still running. Please wait for it to finish.")
     return {"job_id": jid}
 
+class PhotoDoubtRequest(BaseModel):
+    image: str                 # data URL (jpeg/png) from the browser, already downscaled
+    note: str = ""
+    language: str = "English"
+
+VISION_MODEL = os.getenv("GROQ_VISION_MODEL", "qwen/qwen3.8-27b")
+_vision = None
+
+@app.post("/doubt/photo")
+def doubt_photo(req: PhotoDoubtRequest, user: dict = Depends(ai_guard)):
+    """Solve a question from a photo (handwritten or printed) with a vision model."""
+    global _vision
+    img = (req.image or "").strip()
+    if not re.match(r"^data:image/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$", img):
+        raise HTTPException(status_code=400, detail="Please send a JPG or PNG photo.")
+    if len(img) > 4_500_000:
+        raise HTTPException(status_code=413, detail="Photo is too large. Try a closer, smaller photo.")
+    if _vision is None:
+        _vision = ChatGroq(model=VISION_MODEL, temperature=0.2, groq_api_key=os.getenv("GROQ_API_KEY"))
+    note = (req.note or "").strip()[:300]
+    prompt = ("You are a patient tutor. The image has a study question (maybe handwritten). First write what you read as 'Question:' in one or two lines, "
+              "then solve it step by step with short numbered steps, then give 'Final answer:' and one line 'Concept:'. "
+              "If the photo is unreadable or has no question, say so plainly and ask for a clearer photo; never guess. "
+              + (f"Student note: {note}. " if note else "") + f"Language: {req.language}.")
+    try:
+        out = _vision.invoke([HumanMessage(content=[{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": img}}])])
+    except Exception as e:
+        logging.warning("photo doubt failed: %s", str(e)[:200])
+        raise HTTPException(status_code=502, detail="Couldn't read the photo right now. Please try again in a minute.")
+    text = out.content if isinstance(out.content, str) else " ".join(p.get("text", "") for p in out.content if isinstance(p, dict))
+    text = (text or "").strip()
+    if len(text) < 10:
+        raise HTTPException(status_code=502, detail="No answer came back. Try a clearer photo.")
+    return {"answer": text[:6000], "model": VISION_MODEL}
+
 @app.post("/pyq/solve")
 def pyq_solve(req: PyqSolveRequest, user: dict = Depends(ai_guard)):
     q = (req.question or "").strip()

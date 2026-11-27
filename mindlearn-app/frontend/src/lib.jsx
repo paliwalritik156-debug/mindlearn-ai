@@ -565,6 +565,8 @@ export const FUN_META = {
   duel:        { title:"Duel", tag:"Challenge a friend, 1v1.", desc:"Pick a topic, play 5 questions, then send a challenge link. Your friend plays without signing in and the higher score wins (faster time breaks a tie).", tips:["Pick a topic you both know.","Send the link on WhatsApp.","Ties are decided by time."] },
   teachback:   { title:"Teach it back", tag:"Explain it to a confused student.", desc:"Explain a topic in your own words. An AI student reacts, asks a follow-up and scores your clarity, accuracy and depth.", tips:["Use simple words, no jargon.","Answer the student's follow-up questions.","Verify the AI's feedback with your book."] },
   cheatsheet:  { title:"Cheat-sheet", tag:"One page. Everything that matters.", desc:"Turns your PDF into a compact one-page revision sheet of formulas, definitions and common traps. Print it or save as PDF.", tips:["Add a focus like a chapter name for a sharper sheet.","Print it the night before the exam.","Always cross-check formulas with your book."] },
+  photodoubt:  { title:"Photo doubt", tag:"Snap it. Solve it.", desc:"Take a photo of any question, even handwritten, and get a step-by-step solution from a vision AI.", tips:["Keep the question in focus and well lit.","Crop out other questions.","Check the final answer against your book."] },
+  room:        { title:"Study room", tag:"Study together, same clock.", desc:"Start a shared Pomodoro and send the link. Everyone who opens it sees the same focus and break timer.", tips:["Send the link before the 10 second start.","Agree on rounds first.","Device clocks should be correct."] },
   coach:       { title:"Exam Coach", tag:"Countdown, daily plan, no guesswork.", desc:"Set your exam date and daily hours. Get a phase-wise plan (Build, Practice, Revise, Final) built from your due mistakes, weak topics and mock history.", tips:["Set the real exam date and honest hours per day.","Tick tasks as you finish them to keep your streak.","Take a timed mock weekly so the plan can adapt."] },
   weakspots:   { title:"Weak-Spot Radar", tag:"Know exactly where you slip.", desc:"Tracks which topics you get wrong across quizzes and exams, shows them on a radar, and builds a practice quiz from your weakest topics.", tips:["Take a few quizzes first so there is data to analyse.","Topics are auto-detected from each question.","Practice weak spots a little every day."] },
   exam:        { title:"Exam Simulator", tag:"A real paper, a real clock.", desc:"Generates a timed paper from your PDF with negative marking, a question navigator and a full report at the end.", tips:["Pick the style closest to your exam.","Mark tricky questions for review and come back to them.","Read the report: topic breakdown shows what to revise."] },
@@ -595,7 +597,7 @@ export const SIDEBAR_GROUPS = [
     ["youtube","📺"],["essay","✍️"],["compare","⚔️"],["image","🖼️"],["studyplan","🗓️"],["pomodoro","⏱️"],["prompt","⚙️"],["theme","🎨"],["reading","📖"],
   ]},
   { label:"Smart Lab", items:[
-    ["coach","⏳"],["teachback","🧑‍🏫"],["cheatsheet","📄"],["duel","⚔️"],["knowledge","🌌"],["weakspots","🎯"],["exam","📝"],["voice","🎙️"],
+    ["coach","⏳"],["teachback","🧑‍🏫"],["cheatsheet","📄"],["photodoubt","📸"],["room","📚"],["duel","⚔️"],["knowledge","🌌"],["weakspots","🎯"],["exam","📝"],["voice","🎙️"],
   ]},
   { label:"Progress", items:[
     ["achievements","🏆"],["scores","📈"],
