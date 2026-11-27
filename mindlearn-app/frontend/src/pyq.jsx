@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { api, toast, Spin, useLocalState, recordAnswers, getOutLang } from "./lib.jsx"
+import { api, toast, Spin, useLocalState, recordAnswers, getOutLang, askText } from "./lib.jsx"
+import { whyWrongPrompt } from "./v46lib.js"
 import { SCHEMES, defaultMinutes, fmtClock, scorable, scoreMock, topicBreakdown } from "./mock.js"
 import { queueMistakes } from "./revenge.js"
 import { CAUSES, causeLabel, pushLog, setLogCause, addToQueue, dueItems, waitingItems, gradeItem, setItemField, daysUntil, mistakeDna, BOX_DAYS } from "./mistakes.js"
@@ -46,8 +47,11 @@ function MiniQ({ q, exam, idKey, onVerdict }){
   const [res, setRes] = useState(null)
   const [sol, setSol] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [why, setWhy] = useState("")
+  const [whyBusy, setWhyBusy] = useState(false)
   const t0 = useRef(Date.now())
-  useEffect(()=>{ setPick(null); setRes(null); setSol(null); t0.current = Date.now() }, [idKey])
+  const askWhy = async ()=>{ setWhyBusy(true); try{ setWhy(await askText(whyWrongPrompt(q.question, pick, res?.correct || q.answer, getOutLang() !== "en"))) }catch(e){ toast("Explain nahi ho paya, dobara try karo.") } setWhyBusy(false) }
+  useEffect(()=>{ setWhy(""); setPick(null); setRes(null); setSol(null); t0.current = Date.now() }, [idKey])
   function finish(o, correct){
     const ok = sameOpt(o, correct)
     setRes({ ok, correct })
@@ -77,8 +81,10 @@ function MiniQ({ q, exam, idKey, onVerdict }){
       {res && <div className={"pyq-res " + (res.ok ? "ok" : "bad")}>{res.ok ? "✅ Correct" : "❌ Not quite"}</div>}
       <div className="pyq-acts">
         {!res && pick && !q.answer && <button className="btn btn-p" disabled={busy} onClick={check} data-testid="miniq-check">{busy ? <Spin /> : "Check my answer"}</button>}
+        {res && !res.ok && pick && !why && <button className="btn" disabled={whyBusy} onClick={askWhy} data-testid="why-wrong">{whyBusy ? <Spin /> : "🧠 Mujhse galti kyun hui?"}</button>}
         {res && !q.explanation && !sol && <button className="btn" disabled={busy} onClick={loadSol}>{busy ? <Spin /> : "💡 Show solution"}</button>}
       </div>
+      {why && <div className="pyq-sol" data-testid="why-text"><p>🧠 {why}</p></div>}
       {(q.explanation || sol) && res && (
         <div className="pyq-sol">
           {sol ? <><ol>{sol.steps.map((x, i)=><li key={i}>{x}</li>)}</ol>{sol.concept && <p><b>Concept:</b> {sol.concept}</p>}</> : <p>{q.explanation}</p>}

@@ -18,7 +18,7 @@ function labelSprite(text){
   return sp
 }
 
-export default function MapCanvas({ concepts, selected, onSelect }){
+export default function MapCanvas({ concepts, selected, onSelect, weakNames = [] }){
   const mountRef = useRef()
   const selRef = useRef(selected)
   selRef.current = selected
@@ -54,7 +54,7 @@ export default function MapCanvas({ concepts, selected, onSelect }){
     })
     const disposables = []
     const nodes = concepts.map((c, i)=>{
-      const col = new THREE.Color().setHSL(0.72 - (i/Math.max(1,n-1)) * 0.22, 0.85, 0.62)
+      const col = weakNames.includes(c.name) ? new THREE.Color(0xff4d4d) : new THREE.Color().setHSL(0.72 - (i/Math.max(1,n-1)) * 0.22, 0.85, 0.62)
       const geo = new THREE.SphereGeometry(0.5, 24, 24)
       const mat = new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, metalness: 0.3, roughness: 0.35 })
       const mesh = new THREE.Mesh(geo, mat); mesh.position.copy(pos[i]); mesh.userData.i = i
@@ -177,7 +177,7 @@ export default function MapCanvas({ concepts, selected, onSelect }){
       disposables.forEach(d=>d && d.dispose && d.dispose())
       renderer.dispose(); mount.removeChild(dom)
     }
-  },[JSON.stringify(concepts.map(c=>[c.name,c.related]))])
+  },[JSON.stringify(concepts.map(c=>[c.name,c.related])), weakNames.join("|")])
 
   if(noGL) return <div className="kmap-fallback">{concepts.map(c=><button key={c.name} className={"chip"+(selected===c.name?" on":"")} onClick={()=>onSelect(c.name)}>{c.name}</button>)}</div>
   return <div className="kmap-canvas" ref={mountRef} />

@@ -431,6 +431,7 @@ function Flashcards(){
       <div className="tool-actions">
         <button className="btn btn-p" disabled={loading} onClick={gen}>{loading ? <Spin/> : (cards.length ? "Regenerate" : "Generate Flashcards")}</button>
         {cards.length>0 && <button className="btn btn-ghost" onClick={shuffle}>🔀 Shuffle</button>}
+        {cards.length>0 && <button className="btn btn-ghost" data-testid="to-srs" onClick={()=>{ try{ const r = addToSrs(cards, JSON.parse(localStorage.getItem("ml_srs") || "[]")); localStorage.setItem("ml_srs", JSON.stringify(r.list)); window.dispatchEvent(new CustomEvent("ml-ls", { detail: "ml_srs" })); toast(r.added ? `${r.added} card${r.added > 1 ? "s" : ""} added to Spaced Repetition 🔁` : "Ye cards already Spaced Repetition me hain") }catch(e){ toast("Couldn't add cards.", "error") } }} title="Review these cards on a schedule">🔁 Add to Spaced Repetition</button>}
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>downloadFile("mindlearn-flashcards.txt", cards.map(c=>String(c.q||"").replace(/\t|\n/g," ") + "\t" + String(c.a||"").replace(/\t|\n/g," ")).join("\n"))} title="Tab-separated: import into Anki or Quizlet">⬇ Anki</button>}
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>downloadFile("mindlearn-deck.json", JSON.stringify({ app:"mindlearn-deck", cards }, null, 1), "application/json")} title="Share this deck with a friend">⬇ Share</button>}
         {cards.length>0 && <button className="btn btn-ghost" onClick={()=>shareSet("flashcards", "Flashcards", cards).catch(e=>toast(e?.response?.data?.detail || "Couldn't create the link.", "error"))} title="Get a link a friend can open without signing in">🔗 Share link</button>}
@@ -764,6 +765,8 @@ function StudyPlanTab(){
 }
 
 /* ============================= Mock Interview ============================= */
+import { addToSrs } from "./v46lib.js"
+const CheatSheetTab = lazy(()=>import("./cheatsheet.jsx"))
 const DuelTab = lazy(()=>import("./duel.jsx"))
 const TeachBackTab = lazy(()=>import("./teachback.jsx"))
 const CoachTab = lazy(()=>import("./coach.jsx"))
@@ -1051,7 +1054,7 @@ function getTabComponent(key){
     typing: TypingTestTab, mnemonics: MnemonicsTab, difficulty: DifficultyRater, srs: SpacedRepetitionTab,
     debate: SelfDebate, reading: ReadingTrackerTab, multipdf: MultiPDFChat, codegen: CodeGeneratorTab,
     debugger: CodeDebuggerTab, reviewer: CodeReviewerTab, algorithm: AlgorithmVisualizerTab, codequiz: CodeQuizTab,
-    pyq: PyqTab, coach: CoachTab, duel: DuelTab, teachback: TeachBackTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
+    pyq: PyqTab, coach: CoachTab, cheatsheet: CheatSheetTab, duel: DuelTab, teachback: TeachBackTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
   }
   return map[key] || (()=> <div className="card">Coming soon.</div>)
 }
@@ -1421,7 +1424,7 @@ function HomeOverview({ user, activity, goTo, pins, togglePin, doc, setDoc, open
 
       <div className="home-section-head"><h3>Smart Lab <span className="new-badge">NEW</span></h3></div>
       <div className="lab-grid">
-        {[["coach","Exam date, countdown and a daily plan."],["teachback","Explain it to a confused AI student."],["duel","Challenge a friend to a 1v1 quiz."],["knowledge","Explore your PDF as a 3D galaxy of ideas."],["weakspots","Radar of the topics you keep missing."],["exam","Timed paper with negative marking."],["voice","Talk to your tutor, hands-free."]].map(([k,d])=>(
+        {[["coach","Exam date, countdown and a daily plan."],["teachback","Explain it to a confused AI student."],["cheatsheet","One-page revision sheet from your PDF."],["duel","Challenge a friend to a 1v1 quiz."],["knowledge","Explore your PDF as a 3D galaxy of ideas."],["weakspots","Radar of the topics you keep missing."],["exam","Timed paper with negative marking."],["voice","Talk to your tutor, hands-free."]].map(([k,d])=>(
           <div key={k} className="lab-card" role="button" tabIndex={0} onKeyDown={kbd(()=>goTo(k))} onClick={()=>goTo(k)}>
             <span className="lab-icon">{ICON_BY_KEY[k]}</span>
             <div><b>{FUN_META[k].title}</b><span>{d}</span></div>

@@ -6,6 +6,7 @@ import {
 } from "./lib.jsx"
 import { useLocalState as useLS, toast as toastMsg } from "./lib.jsx"
 import { saveToNotes } from "./core.js"
+import { weakConceptNames } from "./v46lib.js"
 import { queueMistakes } from "./revenge.js"
 import { hasPdfs, findBest, getBuffer, loadPdfJs, pdfNames, keywordsOf } from "./pdfstore.js"
 
@@ -219,6 +220,7 @@ export function KnowledgeMapTab({ Quiz }){
   const [cards, setCards] = useState(null)
   const [quizOn, setQuizOn] = useState(false)
   const concepts = data?.concepts || []
+  const weakNames = useMemo(()=>weakConceptNames(concepts, weakStats()), [data])
   const cur = concepts.find(c=>c.name === sel)
 
   useEffect(()=>{ setExplain(""); setCards(null); setQuizOn(false) },[sel])
@@ -271,8 +273,9 @@ export function KnowledgeMapTab({ Quiz }){
       )}
       {!loading && concepts.length > 0 && (
         <>
+          {weakNames.length > 0 && <p className="coach-note" style={{ margin: "0 0 6px" }}>🔴 Red = your weak topics ({weakNames.length}), based on your quiz history.</p>}
           <div className="kmap-wrap">
-            <Suspense fallback={<div className="map-loading"><Spin/></div>}><MapCanvas concepts={concepts} selected={sel} onSelect={setSel} /></Suspense>
+            <Suspense fallback={<div className="map-loading"><Spin/></div>}><MapCanvas concepts={concepts} selected={sel} onSelect={setSel} weakNames={weakNames} /></Suspense>
           </div>
           <div className="kmap-panel">
             {!cur ? <div className="kmap-pick">Pick a concept to explain it, quiz yourself or make flashcards.</div> : (

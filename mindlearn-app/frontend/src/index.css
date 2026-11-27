@@ -1996,3 +1996,7 @@ html.lite .hero-floor, html.lite .hero-beam{ display:none }
 .tb-b.you{background:rgba(124,92,255,.2);justify-self:end}.tb-b.student{background:rgba(255,255,255,.07)}
 .tb-score{padding:12px 14px;border-radius:14px;background:rgba(0,200,255,.07);display:grid;gap:6px}.tb-score h4{margin:0}.tb-score p{margin:2px 0;font-size:.88rem}
 .tb-m{display:grid;grid-template-columns:70px 1fr 30px;gap:8px;align-items:center;font-size:.8rem}.tb-m div{height:6px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}.tb-m i{display:block;height:100%;background:linear-gradient(90deg,#7c5cff,#00c8ff)}
+
+/* v46 */
+.cheat-sheet{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.05);font-size:.9rem;columns:2 260px;column-gap:22px}
+.cheat-sheet h3{margin:10px 0 4px;font-size:1rem;break-after:avoid}.cheat-sheet ul{margin:0 0 6px;padding-left:18px}.cheat-sheet li{margin:2px 0}
