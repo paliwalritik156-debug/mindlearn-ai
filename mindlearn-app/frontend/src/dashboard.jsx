@@ -764,6 +764,8 @@ function StudyPlanTab(){
 }
 
 /* ============================= Mock Interview ============================= */
+const DuelTab = lazy(()=>import("./duel.jsx"))
+const TeachBackTab = lazy(()=>import("./teachback.jsx"))
 const CoachTab = lazy(()=>import("./coach.jsx"))
 const InterviewLive = lazy(()=>import("./interview.jsx"))
 function MockInterviewTab(){ return <Suspense fallback={<div className="card"><Spin /></div>}><InterviewLive /></Suspense> }
@@ -1049,7 +1051,7 @@ function getTabComponent(key){
     typing: TypingTestTab, mnemonics: MnemonicsTab, difficulty: DifficultyRater, srs: SpacedRepetitionTab,
     debate: SelfDebate, reading: ReadingTrackerTab, multipdf: MultiPDFChat, codegen: CodeGeneratorTab,
     debugger: CodeDebuggerTab, reviewer: CodeReviewerTab, algorithm: AlgorithmVisualizerTab, codequiz: CodeQuizTab,
-    pyq: PyqTab, coach: CoachTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
+    pyq: PyqTab, coach: CoachTab, duel: DuelTab, teachback: TeachBackTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
   }
   return map[key] || (()=> <div className="card">Coming soon.</div>)
 }
@@ -1419,7 +1421,7 @@ function HomeOverview({ user, activity, goTo, pins, togglePin, doc, setDoc, open
 
       <div className="home-section-head"><h3>Smart Lab <span className="new-badge">NEW</span></h3></div>
       <div className="lab-grid">
-        {[["coach","Exam date, countdown and a daily plan."],["knowledge","Explore your PDF as a 3D galaxy of ideas."],["weakspots","Radar of the topics you keep missing."],["exam","Timed paper with negative marking."],["voice","Talk to your tutor, hands-free."]].map(([k,d])=>(
+        {[["coach","Exam date, countdown and a daily plan."],["teachback","Explain it to a confused AI student."],["duel","Challenge a friend to a 1v1 quiz."],["knowledge","Explore your PDF as a 3D galaxy of ideas."],["weakspots","Radar of the topics you keep missing."],["exam","Timed paper with negative marking."],["voice","Talk to your tutor, hands-free."]].map(([k,d])=>(
           <div key={k} className="lab-card" role="button" tabIndex={0} onKeyDown={kbd(()=>goTo(k))} onClick={()=>goTo(k)}>
             <span className="lab-icon">{ICON_BY_KEY[k]}</span>
             <div><b>{FUN_META[k].title}</b><span>{d}</span></div>
