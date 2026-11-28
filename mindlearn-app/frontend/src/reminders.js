@@ -1,4 +1,5 @@
-// Study reminders via the Notification API. Works only while the app is open (no push server).
+// Study reminders. Web push (works with the app closed) when the server supports it, otherwise a notification while the app is open.
+import { api } from "./lib.jsx"
 const K = "ml_reminder"
 export function getReminder(){ try{ return JSON.parse(localStorage.getItem(K) || "null") || { on:false, time:"19:00" } }catch(e){ return { on:false, time:"19:00" } } }
 export function setReminder(r){ try{ localStorage.setItem(K, JSON.stringify(r)); window.dispatchEvent(new CustomEvent("ml-ls", { detail:K })) }catch(e){ /* ignore */ } }
@@ -8,7 +9,25 @@ export async function enableReminder(time){
   if(p === "default") p = await Notification.requestPermission()
   if(p !== "granted") return "denied"
   setReminder({ on:true, time, lastDay:"" })
-  return "ok"
+  return (await subscribePush(time)) ? "push" : "ok"
+}
+const b64ToU8 = b=>{ const p = "=".repeat((4 - b.length % 4) % 4), r = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from([...r].map(c=>c.charCodeAt(0))) }
+export async function subscribePush(time){
+  try{
+    if(!("serviceWorker" in navigator) || !("PushManager" in window)) return false
+    const key = (await api.get("/push/key", { silent:true })).data?.key; if(!key) return false
+    const reg = await navigator.serviceWorker.ready
+    let sub = await reg.pushManager.getSubscription()
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(key) })
+    await api.post("/push/subscribe", { subscription: sub.toJSON(), time, tz: new Date().getTimezoneOffset() }, { silent:true })
+    return true
+  }catch(e){ return false }
+}
+export async function unsubscribePush(){
+  try{
+    const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription()
+    if(sub){ await api.post("/push/unsubscribe", { endpoint: sub.endpoint }, { silent:true }); await sub.unsubscribe() }
+  }catch(e){ /* ignore */ }
 }
 let timer = null
 export function startReminders(){

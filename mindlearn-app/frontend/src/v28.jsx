@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { useLocalState, toast } from "./lib.jsx"
 import { weekSeries } from "./studytime.js"
-import { getReminder, enableReminder, setReminder } from "./reminders.js"
+import { getReminder, enableReminder, setReminder, subscribePush, unsubscribePush } from "./reminders.js"
 import { perfMode, applyPerf, isLite } from "./perf.js"
 
 const fmtT = s => s < 60 ? (s ? "<1m" : "0m") : s < 3600 ? Math.round(s/60) + "m" : Math.floor(s/3600) + "h " + String(Math.round((s%3600)/60)).padStart(2,"0") + "m"
@@ -40,12 +40,12 @@ export function SettingsExtras(){
   const supported = typeof Notification !== "undefined"
   useEffect(()=>{ applyPerf() },[perf])
   async function toggle(on){
-    if(!on){ const r = { ...rem, on:false }; setReminder(r); setRem(r); return }
+    if(!on){ const r = { ...rem, on:false }; setReminder(r); setRem(r); unsubscribePush(); return }
     const res = await enableReminder(rem.time)
-    if(res === "ok"){ setRem(getReminder()); toast("Reminder on. You'll get a nudge at " + rem.time + " while MindLearn is open.", "ok") }
+    if(res === "ok" || res === "push"){ setRem(getReminder()); toast(res === "push" ? "Reminder on. " + rem.time + " pe notification aayega, app band ho tab bhi." : "Reminder on. You'll get a nudge at " + rem.time + " while MindLearn is open.", "ok") }
     else toast(res === "unsupported" ? "This browser doesn't support notifications." : "Notifications are blocked. Allow them in your browser's site settings.", "error")
   }
-  function setTime(time){ const r = { ...rem, time, lastDay:"" }; setRem(r); setReminder(r) }
+  function setTime(time){ const r = { ...rem, time, lastDay:"" }; setRem(r); setReminder(r); if(r.on) subscribePush(time) }
   return (
     <div className="card set-card">
       <h3>Performance &amp; reminders</h3>

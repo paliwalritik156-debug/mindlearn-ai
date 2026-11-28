@@ -272,6 +272,27 @@ os.environ["ADMIN_EMAILS"] = "someone@else.com"
 ok("non-admin -> 403", c.get("/admin/stats").status_code == 403 and c.get("/admin/me").json() == {"admin": False})
 os.environ["ADMIN_EMAILS"] = "R@X.com"
 ok("admin/me true (case-insensitive)", c.get("/admin/me").json() == {"admin": True})
+# --- v58: web push reminders ---
+import push_router as pr, time as _t
+ok("push enabled (pywebpush present)", pr.OK)
+k1 = c.get("/push/key").json().get("key", ""); k2 = c.get("/push/key").json().get("key", "")
+ok("push key stable + looks like VAPID", k1 == k2 and len(k1) in (86, 87), k1)
+sub = {"endpoint": "https://push.example/abc", "keys": {"p256dh": "x", "auth": "y"}}
+ok("subscribe", c.post("/push/subscribe", json={"subscription": sub, "time": "19:00", "tz": -330}).json() == {"ok": True})
+ok("bad endpoint rejected", c.post("/push/subscribe", json={"subscription": {"endpoint": "http://x", "keys": {}}, "time": "19:00", "tz": 0}).status_code == 400)
+# 19:00 IST == 13:30 UTC
+t_1330 = 1700000000 - (1700000000 % 86400) + 13 * 3600 + 35 * 60
+ok("due at 19:05 IST", pr.is_due("19:00", -330, "", t_1330)[0])
+ok("not due before time", not pr.is_due("19:00", -330, "", t_1330 - 3600)[0])
+ok("not due twice a day", not pr.is_due("19:00", -330, pr.is_due("19:00", -330, "", t_1330)[1], t_1330)[0])
+ok("not due after 90 min window", not pr.is_due("19:00", -330, "", t_1330 + 3 * 3600)[0])
+sent = []
+pr.webpush = lambda info, data, **kw: sent.append((info["endpoint"], json.loads(data)["title"]))
+pr.local_now = (lambda orig: (lambda tz, now=None: orig(tz, t_1330)))(pr.local_now)
+n = pr.tick(force=True)
+ok("tick sends once", n == 1 and sent and sent[0][0] == sub["endpoint"], (n, sent))
+ok("tick does not resend same day", pr.tick(force=True) == 0)
+ok("unsubscribe", c.post("/push/unsubscribe", json={"endpoint": sub["endpoint"]}).json() == {"ok": True})
 # account purge removes everything
 main.purge_user_data(7, "r@x.com")
 c2 = db_check = main.db.connect("main")

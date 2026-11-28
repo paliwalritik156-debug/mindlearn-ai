@@ -3,6 +3,7 @@ export const TYPES = [
   { key: "pdf",  icon: "📄", en: "Viva on my PDF",       hi: "Mere PDF pe viva",       hint: "Questions come from your uploaded document" },
   { key: "hr",   icon: "🤝", en: "HR / Behavioural",     hi: "HR / Behavioural",       hint: "Tell me about yourself, strengths, teamwork" },
   { key: "tech", icon: "💻", en: "Technical round",      hi: "Technical round",        hint: "Add a role or subject below, e.g. Python developer" },
+  { key: "resume", icon: "📋", en: "Resume interview",   hi: "Resume interview",       hint: "Paste your resume or upload it. Aria asks about YOUR projects, skills and gaps" },
   { key: "upsc", icon: "🏛️", en: "UPSC / Board panel",   hi: "UPSC / Board panel",     hint: "Opinion, ethics and current-affairs style questions" },
 ]
 export const COUNTS = [3, 5, 7]
@@ -21,9 +22,12 @@ export function fillerCount(text){
 export function wpm(words, secs){ return secs >= 3 ? Math.round(words / (secs / 60)) : 0 }
 export function paceLabel(v){ return !v ? "" : v < 90 ? "slow" : v > 170 ? "fast" : "good" }
 
-export function questionsPrompt({ type, focus, n, lang }){
+export const RESUME_MAX = 6000
+export const cleanResume = t=>String(t || "").replace(/\s+/g, " ").trim().slice(0, RESUME_MAX)
+export function questionsPrompt({ type, focus, n, lang, resume }){
   const t = TYPES.find(x=>x.key === type) || TYPES[0]
   const about = type === "pdf" ? "Base EVERY question on the uploaded document's content (use what you can see in it)." :
+    type === "resume" ? `Base EVERY question on this candidate's resume. Ask about specific projects, claimed skills, numbers, internships, and gaps, the way a real recruiter would probe. Mix 1 easy warm-up with deeper follow-ups. Do not invent facts that are not in it.\nRESUME:\n"""${cleanResume(resume)}"""` :
     type === "hr" ? "Typical HR and behavioural questions (introduction, strengths, weakness, conflict, goals)." :
     type === "tech" ? "Technical questions that test understanding, not trivia." :
     "Panel-style questions: opinion, ethics, administration and current affairs."

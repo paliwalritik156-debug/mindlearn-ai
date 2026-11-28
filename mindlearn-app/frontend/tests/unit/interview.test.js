@@ -39,3 +39,11 @@ describe("interviewlib", () => {
     expect(parseSummary(null)).toBeNull()
   })
 })
+import { cleanResume, RESUME_MAX } from "../../src/interviewlib.js"
+describe("resume interview", () => {
+  it("prompt embeds resume and caps length", () => {
+    const p = questionsPrompt({ type: "resume", n: 3, resume: "Built a Flask app  with\n\nPostgres. " + "x".repeat(9000) })
+    expect(p).toContain("resume"); expect(p).toContain("Flask app with Postgres.")
+    expect(cleanResume("a".repeat(9000)).length).toBe(RESUME_MAX)
+  })
+})

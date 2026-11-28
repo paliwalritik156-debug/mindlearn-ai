@@ -1,5 +1,5 @@
 // Offline support: precache the built app (via precache.json), cache-first for static files, network-first for pages. API calls are never touched.
-const CACHE = "mindlearn-v57"
+const CACHE = "mindlearn-v58"
 self.addEventListener("install", e=>{
   self.skipWaiting()
   e.waitUntil((async()=>{
@@ -22,5 +22,19 @@ self.addEventListener("fetch", e=>{
   e.respondWith(caches.match(req).then(hit=>{
     if(hit) return hit
     return fetch(req).then(r=>{ if(r.ok && !url.pathname.endsWith(".mp4") && !url.pathname.endsWith(".webm")){ const copy = r.clone(); caches.open(CACHE).then(c=>c.put(req, copy)) } return r })
+  }))
+})
+
+/* ---- web push: study reminders even when the app is closed ---- */
+self.addEventListener("push", e=>{
+  let d = {}; try{ d = e.data ? e.data.json() : {} }catch(err){ /* ignore */ }
+  e.waitUntil(self.registration.showNotification(d.title || "Time to study 📚", { body: d.body || "A short session keeps your streak alive.", icon: "/icon-192.png", badge: "/icon-192.png", tag: "ml-reminder", data: { url: d.url || "/" } }))
+})
+self.addEventListener("notificationclick", e=>{
+  e.notification.close()
+  const url = (e.notification.data && e.notification.data.url) || "/"
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list=>{
+    for(const c of list){ if("focus" in c) return c.focus() }
+    return self.clients.openWindow(url)
   }))
 })

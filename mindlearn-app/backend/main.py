@@ -298,6 +298,10 @@ def root():
 
 @app.get("/health")
 def health():
+    try:
+        import threading; threading.Thread(target=push_tick, daemon=True).start()
+    except Exception:
+        pass
     return {"ok": True, "groq_key_set": bool(os.getenv("GROQ_API_KEY")), "sync": SYNC_ON, "db": "postgres" if db.IS_PG else "sqlite"}
 
 def purge_user_data(uid, email=None):
@@ -307,7 +311,7 @@ def purge_user_data(uid, email=None):
     shutil.rmtree(_persist_dir(uid), ignore_errors=True)
     c = _db()
     try:
-        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads", "shares", "circle_members"):
+        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads", "shares", "circle_members", "push_subs"):
             c.execute(f'delete from {t} where "user"=?', (str(uid),))
         c.commit()
     finally:
@@ -321,6 +325,8 @@ from extras_router import build_extras_router
 app.include_router(build_extras_router(get_current_user))
 from circle_router import build_circle_router
 app.include_router(build_circle_router(get_current_user))
+from push_router import build_push_router, tick as push_tick
+app.include_router(build_push_router(get_current_user))
 
 # login, register, forgot/reset password, change password, delete account
 if not os.getenv("MINDLEARN_SKIP_AUTH_ROUTER"):

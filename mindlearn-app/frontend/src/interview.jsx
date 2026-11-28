@@ -5,7 +5,8 @@ import { chipText } from "./gaze.js"
 import { useEffect, useRef, useState } from "react"
 import { askText, parseJSONLoose, toast, Spin, useLocalState, LANGS, getOutLang, langInstruction } from "./lib.jsx"
 import { bestVoice } from "./voicelib.js"
-import { TYPES, COUNTS, MAX_ANSWER_SECS, SILENCE_MS, wordCount, fillerCount, questionsPrompt, parseQuestions, evalPrompt, parseEval, skipped, summaryPrompt, parseSummary, report } from "./interviewlib.js"
+import { loadPdfJs } from "./pdfstore.js"
+import { cleanResume, RESUME_MAX, TYPES, COUNTS, MAX_ANSWER_SECS, SILENCE_MS, wordCount, fillerCount, questionsPrompt, parseQuestions, evalPrompt, parseEval, skipped, summaryPrompt, parseSummary, report } from "./interviewlib.js"
 
 const SR = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
 const isHi = ()=>getOutLang() !== "en"
@@ -30,6 +31,7 @@ export default function InterviewTab(){
   const [note, setNote] = useState("")
   const [camOn, setCamOn] = useState(false)
   const [track, setTrack] = useState(true)
+  const [resume, setResume] = useState("")
   const [att, setAtt] = useState(null)
   const [hist, setHist] = useLocalState("ml_interviews", [])
   const videoRef = useRef(null), streamRef = useRef(null)
@@ -100,13 +102,28 @@ export default function InterviewTab(){
     return ()=>clearInterval(id)
   },[stage, phase, idx])
 
+  async function loadResume(f){
+    if(!f) return
+    try{
+      if(/\.txt$/i.test(f.name) || f.type === "text/plain"){ setResume(cleanResume(await f.text())); return }
+      const pdfjs = await loadPdfJs()
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise
+      let out = ""
+      for(let p = 1; p <= Math.min(4, doc.numPages) && out.length < RESUME_MAX; p++){ const tc = await (await doc.getPage(p)).getTextContent(); out += tc.items.map(i=>i.str).join(" ") + "\n" }
+      if(out.trim().length < 40) throw new Error("empty")
+      setResume(cleanResume(out))
+    }catch(e){ setNote("Is file se text nahi nikla (scanned PDF ho sakta hai). Text paste kar do.") }
+  }
+
   /* ---------- interview flow ---------- */
   async function start(){
-    if(S.busy) return; S.busy = true
+    if(S.busy) return
+    if(type === "resume" && cleanResume(resume).length < 80){ setNote("Resume ka text daalo (kam se kam 3-4 line) ya file upload karo."); return }
+    S.busy = true
     S.type = type; setNote(""); setRows([]); S.rows = []; setSum(null); setStage("loading")
     if(cam) startCam()
     try{
-      const text = await askText(questionsPrompt({ type, focus: focus.trim(), n, lang: langInstruction() }))
+      const text = await askText(questionsPrompt({ type, focus: focus.trim(), n, lang: langInstruction(), resume }))
       const list = parseQuestions(parseJSONLoose(text), n)
       if(list.length < 2) throw new Error("bad")
       S.qs = list; S.idx = 0; setQs(list); setIdx(0); setStage("live")
@@ -182,6 +199,13 @@ export default function InterviewTab(){
           {TYPES.map(x=>(<button key={x.key} className={"iv-type" + (type === x.key ? " on" : "")} onClick={()=>setType(x.key)} data-testid={"iv-type-" + x.key}><span>{x.icon}</span><b>{isHi() ? x.hi : x.en}</b></button>))}
         </div>
         <p className="pyq-note small">{t.hint}</p>
+        {type === "resume" && (
+          <div className="iv-resume">
+            <textarea className="input" rows={6} maxLength={12000} value={resume} onChange={e=>setResume(e.target.value)} placeholder="Apna resume yahan paste karo (education, projects, skills, internship)…" data-testid="iv-resume-text" />
+            <label className="btn btn-sm" style={{ cursor: "pointer", marginTop: 6, display: "inline-block" }}>📎 PDF / TXT upload<input type="file" accept=".pdf,.txt,text/plain,application/pdf" hidden onChange={e=>loadResume(e.target.files?.[0])} /></label>
+            <span className="pyq-note small" style={{ marginLeft: 8 }}>Resume sirf is interview ke AI request me jaata hai, save nahi hota.</span>
+          </div>
+        )}
         <label className="iv-lab">Role / subject (optional)<input className="input" value={focus} maxLength={80} onChange={e=>setFocus(e.target.value)} placeholder={type === "tech" ? "e.g. Python developer, DBMS, Thermodynamics" : "e.g. Software intern at a startup"} /></label>
         <div className="iv-row">
           <div>Questions: {COUNTS.map(c=><button key={c} className={"chip" + (n === c ? " on" : "")} onClick={()=>setN(c)}>{c}</button>)}</div>

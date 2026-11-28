@@ -2207,3 +2207,7 @@ html.light .dbt-setup input,html.light .dbt-setup select{background:#fff;border-
 html.light .att-chip{color:#fff}
 html.light .att-nudge{background:#fff3df;color:#5a3300;border-color:#e8a24a}
 html.light .att-report{background:#fff1e0;color:#3a2410}
+html.light .story-step{opacity:.62}
+html.light .story-step.on{opacity:1}
+html.light .story-step h3{color:#3a1d0a}
+html.light .story-step p{color:#6b4a35}
