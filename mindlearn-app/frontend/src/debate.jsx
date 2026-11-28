@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react"
 import { askText, parseJSONLoose, toast, Spin, useLocalState, LANGS, getOutLang } from "./lib.jsx"
 import { LEVELS, ROUNDS, sideFor, openingPrompt, turnPrompt, parseTurn, finalPrompt, parseFinal, averages } from "./debatelib.js"
 import { rankVoices, phrases, prosody } from "./voicelib.js"
+import Avatar from "./Avatar.jsx"
+import { useGaze } from "./gazehook.js"
+import Attention from "./Attention.jsx"
+import { chipText } from "./gaze.js"
 import { wordCount, fillerCount, wpm, paceLabel } from "./interviewlib.js"
 
 const SR = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
@@ -24,10 +28,13 @@ export default function DebateLive(){
   const [fin, setFin] = useState(null)
   const [note, setNote] = useState("")
   const [camOn, setCamOn] = useState(false)
+  const [track, setTrack] = useState(true)
+  const [att, setAtt] = useState(null)
   const [voices, setVoices] = useState([])
   const [voiceName, setVoiceName] = useLocalState("ml_pari_voice", "")
   const [hist, setHist] = useLocalState("ml_debates", [])
   const videoRef = useRef(null), streamRef = useRef(null)
+  const gz = useGaze(videoRef, camOn && track && stage === "live")
   const S = useRef({ alive: true, token: 0, rec: null, want: false, text: "", t0: 0, last: 0, rows: [], log: [], round: 1, busy: false, topic: "", ai: "Against", level: "friendly", rounds: 4 }).current
 
   useEffect(()=>{
@@ -146,7 +153,7 @@ export default function DebateLive(){
     setPhase("thinking")
     let f = null
     try{ f = parseFinal(parseJSONLoose(await askText(finalPrompt(S.topic, S.ai, S.rows.map(r=>({ text: r.text })), isHi())))) }catch(e){}
-    setFin(f); stopCam(); stopListen(); setStage("report")
+    setAtt(track && camOn ? gz.summary() : null); setFin(f); stopCam(); stopListen(); setStage("report")
     const a = averages(S.rows)
     setHist(h=>[...h, { at: Date.now(), topic: S.topic, winner: f?.winner || "draw", logic: a.logic, evidence: a.evidence }].slice(-20))
   }
@@ -158,12 +165,13 @@ export default function DebateLive(){
   if(stage === "setup" || stage === "loading"){
     return (
       <div className="card dbt-setup" data-testid="dbt-setup">
-        <div className="dbt-hero"><Orb state="idle" /><div><h3>⚖️ Live Debate with Pari</h3><p>Pari se awaaz me bahas karo, camera ke saath. Wo tumhari baat sunti hai, jawab deti hai aur end me batati hai kaun jeeta.</p></div></div>
+        <div className="dbt-hero"><Avatar who="pari" state="idle" size={96} /><div><h3>⚖️ Live Debate with Pari</h3><p>Pari se awaaz me bahas karo, camera ke saath. Wo tumhari baat sunti hai, jawab deti hai aur end me batati hai kaun jeeta.</p></div></div>
         <label>Topic<input value={topic} onChange={e=>setTopic(e.target.value)} placeholder="e.g. Social media does more harm than good" maxLength={120} /></label>
         <label>Tumhari side<div className="room-opts">{["For", "Against"].map(x=><button type="button" key={x} className={"chip" + (mine === x ? " on" : "")} onClick={()=>setMine(x)}>{x === "For" ? "👍 Favour" : "👎 Against"}</button>)}</div></label>
         <label>Pari ka style<div className="room-opts">{LEVELS.map(l=><button type="button" key={l.key} className={"chip" + (level === l.key ? " on" : "")} onClick={()=>setLevel(l.key)} title={l.hint}>{l.label}</button>)}</div></label>
         <label>Rounds<div className="room-opts">{ROUNDS.map(n=><button type="button" key={n} className={"chip" + (rounds === n ? " on" : "")} onClick={()=>setRounds(n)}>{n}</button>)}</div></label>
         <label className="dbt-check"><input type="checkbox" checked={cam} onChange={e=>setCam(e.target.checked)} /> Camera on (sirf tumhe dikhega, record ya upload nahi hota)</label>
+        {cam && <label className="dbt-check"><input type="checkbox" checked={track} onChange={e=>setTrack(e.target.checked)} /> 👀 Attention tracking (nazar screen pe hai ya nahi, sirf tumhare browser me)</label>}
         {ranked.length > 0 && (
           <label>Pari ki awaaz<div className="dbt-voice"><select value={chosen()?.name || ""} onChange={e=>setVoiceName(e.target.value)}>{ranked.slice(0, 8).map(v=><option key={v.name} value={v.name}>{v.name.replace(/Microsoft |Google /, "")}</option>)}</select><button type="button" className="btn btn-sm" onClick={testVoice}>▶ Test</button></div></label>
         )}
@@ -188,11 +196,12 @@ export default function DebateLive(){
           <div className="ad-stat"><div className="ad-n">{pace || "-"}</div><div className="ad-l">Words/min {paceLabel(pace) && `(${paceLabel(pace)})`}</div></div>
           <div className="ad-stat"><div className="ad-n">{fill}</div><div className="ad-l">Filler words</div></div>
         </div>
+        <Attention sm={att} />
         {fin?.best && <p>💪 <b>Sabse strong point:</b> {fin.best}</p>}
         {fin?.weak && <p>🕳 <b>Kamzor point:</b> {fin.weak}</p>}
         {fin?.tips?.length > 0 && <ul>{fin.tips.map((t, i)=><li key={i}>{t}</li>)}</ul>}
         <details><summary>Poori baatcheet</summary>{S.log.map((m, i)=><p key={i}><b>{m.role === "you" ? "You" : "Pari"}:</b> {m.text}</p>)}</details>
-        <p className="coach-note">Scores AI ka andaza hain, final sach nahi. Camera ka koi analysis nahi hota.</p>
+        <p className="coach-note">Scores AI ka andaza hain, final sach nahi. Camera video record/upload nahi hota.</p>
         <div className="duel-actions"><button type="button" className="btn btn-p" onClick={()=>setStage("setup")}>Naya debate</button></div>
       </div>
     )
@@ -203,9 +212,9 @@ export default function DebateLive(){
     <div className="card dbt-live" data-testid="dbt-live">
       <div className="dbt-top"><span>Round {round}/{rounds} · {topic}</span><button type="button" className="btn btn-sm" onClick={endNow}>End & result</button></div>
       <div className="dbt-stage">
-        <Orb state={phase} />
+        <Avatar who="pari" state={phase} size={170} />
         <div className="dbt-status">{phase === "speaking" ? "Pari bol rahi hai…" : phase === "thinking" ? "Pari soch rahi hai…" : "Tumhari baari 🎤"}</div>
-        {camOn && <video ref={videoRef} autoPlay muted playsInline className="dbt-cam" />}
+        {camOn && <div className="dbt-camwrap"><video ref={videoRef} autoPlay muted playsInline className="dbt-cam" />{track && gz.state !== "off" && <span className={"att-chip " + gz.state}>{chipText(gz.state)}</span>}</div>}
       </div>
       <div className="dbt-chat">{log.slice(-4).map((m, i)=>(
         <div key={i} className={"tb-b " + (m.role === "you" ? "you" : "student")}><b>{m.role === "you" ? "You" : "Pari"}</b><p>{m.text}</p>{m.ev?.note && <small>💡 {m.ev.note}</small>}</div>
@@ -216,11 +225,9 @@ export default function DebateLive(){
         {phase === "speaking" && <button type="button" className="btn" onClick={myTurn}>✋ Meri baari</button>}
         {you && <button type="button" className="btn btn-p" onClick={submit}>Done ✓ {elapsed ? `(${elapsed}s)` : ""}</button>}
       </div>
+      {track && camOn && (gz.state === "away" || gz.state === "multi" || gz.state === "noface") && phase === "listening" && <div className="att-nudge" data-testid="att-nudge">{chipText(gz.state)}. Screen ki taraf dekhkar bolo.</div>}
+      {gz.error && <p className="coach-note">{gz.error}</p>}
       {note && <p className="coach-note">{note}</p>}
     </div>
   )
-}
-
-function Orb({ state }){
-  return <div className={"pari-orb " + state} aria-label={"Pari " + state}><i /><i /><b>P</b></div>
 }

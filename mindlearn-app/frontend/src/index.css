@@ -2170,7 +2170,9 @@ html.light .dbt-setup input,html.light .dbt-setup select{background:#fff;border-
 .dbt-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.85rem;opacity:.85}
 .dbt-stage{position:relative;display:grid;place-items:center;gap:10px;padding:18px 0 8px;min-height:220px}
 .dbt-status{font-size:.9rem;opacity:.85}
-.dbt-cam{position:absolute;top:8px;right:8px;width:128px;height:96px;object-fit:cover;border-radius:14px;border:2px solid rgba(var(--v-rgb),.5);transform:scaleX(-1);background:#000}
+.dbt-camwrap{position:absolute;top:8px;right:8px;width:128px;height:96px}
+.dbt-camwrap .att-chip{left:4px;bottom:4px;font-size:.6rem;padding:2px 6px}
+.dbt-cam{position:absolute;top:0;left:0;width:128px;height:96px;object-fit:cover;border-radius:14px;border:2px solid rgba(var(--v-rgb),.5);transform:scaleX(-1);background:#000}
 .dbt-chat{display:grid;gap:8px}.dbt-chat small{opacity:.75}
 .dbt-live-text{min-height:52px;padding:12px 14px;border-radius:14px;border:1px dashed rgba(var(--v-rgb),.5);font-size:1rem}
 .pari-orb{position:relative;width:110px;height:110px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#ffd9ec,var(--v) 55%,var(--cy));box-shadow:0 10px 40px -10px rgba(var(--v-rgb),.7)}
@@ -2184,4 +2186,24 @@ html.light .dbt-setup input,html.light .dbt-setup select{background:#fff;border-
 @keyframes pariBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 @keyframes pariSpin{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(40deg)}}
 @media (prefers-reduced-motion:reduce){.pari-orb,.pari-orb i{animation:none!important}}
-@media (max-width:640px){.dbt-cam{width:92px;height:70px}}
+@media (max-width:640px){.dbt-cam{width:92px;height:70px}.dbt-camwrap{width:92px;height:70px}}
+
+/* v57 avatar + attention tracking */
+.avatar{position:relative;border-radius:50%;box-shadow:0 14px 40px -12px rgba(var(--v-rgb),.65);flex:none;transition:box-shadow .3s,transform .3s}
+.avatar svg{display:block;border-radius:50%}
+.avatar.av-speaking{box-shadow:0 0 0 4px rgba(var(--v-rgb),.35),0 0 38px 6px rgba(var(--v-rgb),.45);animation:avPulse 1.4s ease-in-out infinite}
+.avatar.av-listening{box-shadow:0 0 0 4px rgba(52,211,153,.45),0 0 30px 4px rgba(52,211,153,.3)}
+.avatar.av-thinking{opacity:.92}
+@keyframes avPulse{50%{transform:scale(1.025)}}
+.att-chip{position:absolute;left:8px;bottom:8px;z-index:3;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff;backdrop-filter:blur(6px);max-width:calc(100% - 16px)}
+.att-chip.ok{background:rgba(16,120,80,.85)}
+.att-chip.away,.att-chip.multi,.att-chip.noface{background:rgba(200,60,20,.9)}
+.att-nudge{margin:8px 0 0;padding:8px 12px;border-radius:12px;background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);font-size:.85rem}
+.att-report{margin:12px 0;padding:12px 14px;border-radius:14px;border:1px solid rgba(var(--v-rgb),.35);background:rgba(var(--v-rgb),.08)}
+.att-report h4{margin:0 0 6px}
+.att-report .att-row{display:flex;gap:14px;flex-wrap:wrap;font-size:.9rem;margin:6px 0}
+.att-report.warn{border-color:rgba(245,158,11,.6)}
+.iv-avatar-new{display:grid;place-items:center;margin:4px auto 6px}
+html.light .att-chip{color:#fff}
+html.light .att-nudge{background:#fff3df;color:#5a3300;border-color:#e8a24a}
+html.light .att-report{background:#fff1e0;color:#3a2410}

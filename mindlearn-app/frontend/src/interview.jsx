@@ -1,3 +1,7 @@
+import Avatar from "./Avatar.jsx"
+import { useGaze } from "./gazehook.js"
+import Attention from "./Attention.jsx"
+import { chipText } from "./gaze.js"
 import { useEffect, useRef, useState } from "react"
 import { askText, parseJSONLoose, toast, Spin, useLocalState, LANGS, getOutLang, langInstruction } from "./lib.jsx"
 import { bestVoice } from "./voicelib.js"
@@ -25,8 +29,11 @@ export default function InterviewTab(){
   const [sum, setSum] = useState(null)
   const [note, setNote] = useState("")
   const [camOn, setCamOn] = useState(false)
+  const [track, setTrack] = useState(true)
+  const [att, setAtt] = useState(null)
   const [hist, setHist] = useLocalState("ml_interviews", [])
   const videoRef = useRef(null), streamRef = useRef(null)
+  const gz = useGaze(videoRef, camOn && track && stage === "live")
   const S = useRef({ alive: true, token: 0, rec: null, want: false, text: "", t0: 0, last: 0, qs: [], rows: [], idx: 0, busy: false, type: "pdf" }).current
 
   useEffect(()=>{
@@ -152,7 +159,7 @@ export default function InterviewTab(){
   async function buildReport(){
     let s = null
     try{ s = parseSummary(parseJSONLoose(await askText(summaryPrompt(S.rows, langInstruction())))) }catch(e){}
-    setSum(s); stopCam(); stopListen(); setStage("report")
+    setAtt(track && camOn ? gz.summary() : null); setSum(s); stopCam(); stopListen(); setStage("report")
     const r = report(S.rows)
     setHist(h=>[...h, { at: Date.now(), type: S.type, avg: r.avg, n: r.total }].slice(-20))
   }
@@ -170,7 +177,7 @@ export default function InterviewTab(){
     return (
       <div className="card iv-setup" data-testid="iv-setup">
         <h3 style={{ marginTop: 0 }}>🎥 Live interview with Aria</h3>
-        <p className="pyq-note" style={{ marginTop: 0 }}>Aria asks questions out loud, you answer with your voice, and she reacts like a real interviewer. Your camera is only for you to practise eye contact. It is not recorded or uploaded.</p>
+        <p className="pyq-note" style={{ marginTop: 0 }}>Aria asks questions out loud, you answer with your voice, and she reacts like a real interviewer. Your camera is not recorded or uploaded. With attention tracking on, your browser checks (locally) whether you keep looking at the screen, and shows an approximate summary at the end.</p>
         <div className="iv-types">
           {TYPES.map(x=>(<button key={x.key} className={"iv-type" + (type === x.key ? " on" : "")} onClick={()=>setType(x.key)} data-testid={"iv-type-" + x.key}><span>{x.icon}</span><b>{isHi() ? x.hi : x.en}</b></button>))}
         </div>
@@ -179,6 +186,7 @@ export default function InterviewTab(){
         <div className="iv-row">
           <div>Questions: {COUNTS.map(c=><button key={c} className={"chip" + (n === c ? " on" : "")} onClick={()=>setN(c)}>{c}</button>)}</div>
           <label className="voice-toggle"><input type="checkbox" checked={cam} onChange={e=>setCam(e.target.checked)} /> 📷 Camera on</label>
+          {cam && <label className="voice-toggle"><input type="checkbox" checked={track} onChange={e=>setTrack(e.target.checked)} /> 👀 Attention tracking (eye contact check)</label>}
         </div>
         {!SR && <div className="form-err">Your browser can't listen to speech. You can still type your answers. Chrome or Edge works best for voice.</div>}
         {note && <div className="form-err">{note}</div>}
@@ -213,6 +221,7 @@ export default function InterviewTab(){
             <div><h4>🎯 Work on</h4><ul>{sum.work_on.map((x, i)=><li key={i}>{x}</li>)}</ul></div>
           </div>
         )}
+        <Attention sm={att} />
         <h4>Question by question</h4>
         {rows.map((x, i)=>(
           <details key={i} className="iv-q"><summary><b>{i + 1}.</b> {x.q} <span className="chip" style={{ marginLeft: 8 }}>{x.skipped ? "skipped" : x.score + "/10"}</span></summary>
@@ -235,11 +244,11 @@ export default function InterviewTab(){
     <div className="card iv-live" data-testid="iv-live">
       <div className="iv-bar"><span>Question {idx + 1} of {qs.length}{q?.topic ? " · " + q.topic : ""}</span><button className="btn btn-ghost btn-sm" onClick={endNow} data-testid="iv-end">End interview</button></div>
       <div className={"iv-stage " + phase}>
-        <div className="iv-avatar" aria-hidden="true"><i /><i /><i /><span>A</span></div>
+        <div className="iv-avatar-new"><Avatar who="aria" state={phase} size={150} /></div>
         <div className="iv-name">Aria <em>· Interviewer</em></div>
         <div className="iv-status">{label}</div>
         <div className="iv-question" data-testid="iv-question">{q?.q}</div>
-        {camOn && <div className="iv-pip"><video ref={videoRef} autoPlay muted playsInline /><em>You · not recorded</em></div>}
+        {camOn && <div className="iv-pip"><video ref={videoRef} autoPlay muted playsInline />{track && gz.state !== "off" ? <span className={"att-chip " + gz.state}>{chipText(gz.state)}</span> : <em>You · not recorded</em>}</div>}
       </div>
       {phase === "listening" && (
         <div className="iv-answer">
@@ -255,6 +264,8 @@ export default function InterviewTab(){
         </div>
       )}
       {phase === "thinking" && <div className="iv-answer"><Spin /> Reading your answer…</div>}
+      {track && camOn && (gz.state === "away" || gz.state === "multi" || gz.state === "noface") && phase === "listening" && <div className="att-nudge" data-testid="att-nudge">{chipText(gz.state)}. Screen/camera ki taraf dekhkar jawab do.</div>}
+      {gz.error && <p className="pyq-note small">{gz.error}</p>}
       {note && <div className="form-err">{note}</div>}
     </div>
   )
