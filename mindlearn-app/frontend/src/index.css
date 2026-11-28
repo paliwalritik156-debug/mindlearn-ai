@@ -2138,3 +2138,11 @@ html.light .coach-set label, html.light .duel-setup label, html.light .tb label{
 html.light .fpage-tag{ color:#9A3412; }
 html.light .hero-phase span.on{ background:linear-gradient(135deg,#B33806,#C94A0A); }
 html.light .pyq-note, html.light .coach-note, html.light small{ color:var(--text-dim); opacity:1; }
+
+/* v53 light: footer, scrolled nav, nav wrapping */
+html.light .footer{ background:linear-gradient(180deg,#FFF3E6,#FFE9D2); border-top:1px solid rgba(70,35,10,.14); backdrop-filter:none; }
+html.light .footer-col h4{ color:#2A1608; font-weight:700; }
+html.light .footer a, html.light .footer-col > span, html.light .footer-brand p, html.light .footer-news-sub, html.light .footer-bottom{ color:#54402F; }
+html.light .footer a:hover{ color:#A5480B; }
+html.light .nav.scrolled{ background:rgba(255,248,240,.92); box-shadow:0 8px 24px -14px rgba(120,50,10,.3); }
+.nav a, .nav button, .nav-links a{ white-space:nowrap; }
