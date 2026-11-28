@@ -223,6 +223,11 @@ def build_extras_router(get_current_user):
             out["recent_users"] = [
                 {"name": x[0], "email": x[1], "created": x[2]}
                 for x in u.execute("select name, email, created_at from users order by id desc limit 15").fetchall()]
+            try:
+                since = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+                out["events_7d"] = [{"name": x[0], "n": x[1]} for x in c.execute("select name, sum(n) from events where day>=? group by name order by sum(n) desc limit 40", (since,)).fetchall()]
+            except Exception:
+                out["events_7d"] = []
         finally:
             c.close(); u.close()
         out["database"] = "postgres" if db.IS_PG else "sqlite (data is lost when the server disk resets)"

@@ -97,6 +97,9 @@ export default function AdminPage({ signedIn }){
             <Stat label="App errors (7d)" value={d.errors_7d} tone={d.errors_7d ? "#f87171" : null}/>
             <Stat label="Feedback" value={d.feedback_total}/>
           </div>
+          <h3>Most used tools (7 days)</h3>
+          {(d.events_7d || []).length === 0 && <p className="ad-empty">No data yet.</p>}
+          {(d.events_7d || []).map((e, i)=>(<div className="card ad-row" key={i}><b>{e.name.replace("tool_open:", "")}</b> <span className="ad-t">{e.n} opens</span></div>))}
           <h3>Feedback</h3>
           {d.recent_feedback.length === 0 && <p className="ad-empty">Nothing yet.</p>}
           {d.recent_feedback.map((f, i)=>(

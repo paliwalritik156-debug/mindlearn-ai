@@ -2153,3 +2153,9 @@ html.light .nav.scrolled{ background:rgba(255,248,240,.92); box-shadow:0 8px 24p
 .wizard label{display:grid;gap:8px;font-size:.88rem}.wizard input[type=date]{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font:inherit}
 html.light .wizard input[type=date]{background:#fff;border-color:rgba(70,35,10,.2);color:var(--text)}
 .chip.on{background:rgba(var(--v-rgb),.28);border-color:rgba(var(--v-rgb),.6)}
+
+/* v55 circles */
+.circle-board{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);display:grid;gap:4px}
+.circle-row{display:grid;grid-template-columns:34px 1fr auto auto;gap:10px;align-items:center;padding:8px 6px;border-top:1px solid rgba(255,255,255,.07)}
+.circle-row.me{background:rgba(var(--v-rgb),.14);border-radius:10px}.cr-r{font-size:1.15rem;text-align:center}.cr-s{font-size:.8rem;opacity:.75}
+html.light .circle-board{background:#FFF3E8}html.light .circle-row{border-top-color:rgba(70,35,10,.1)}

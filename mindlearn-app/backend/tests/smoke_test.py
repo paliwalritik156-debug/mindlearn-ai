@@ -206,6 +206,33 @@ main._vision = _FakeVision("  ");  ok("photo doubt empty -> 502", c.post("/doubt
 main._vision = None
 
 
+# --- v55: study circles + anonymous events ---
+import datetime as _dt
+_wk = (_dt.date.today() - _dt.timedelta(days=_dt.date.today().weekday())).isoformat()
+def _as(uid, name): main.app.dependency_overrides[main.get_current_user] = lambda: {"id": uid, "email": f"{name}@x.com", "name": name}
+_as(7, "R")
+r = c.post("/circle/create", json={"name": "Physics <b>gang</b>", "display": "Ritik"}); code = r.json().get("code", "")
+ok("circle create", r.status_code == 200 and len(code) == 6, r.text)
+ok("circle name sanitized", "<" not in r.json()["name"], r.text)
+_as(8, "Aman")
+ok("circle join bad code 404", c.post("/circle/join", json={"code": "ZZZZZZ", "display": "x"}).status_code == 404)
+ok("circle join ok", c.post("/circle/join", json={"code": code.lower(), "display": "Aman"}).status_code == 200)
+ok("circle rejects stale week", c.post(f"/circle/{code}/score", json={"week": "2001-01-01", "points": 5}).status_code == 400)
+ok("circle score aman", c.post(f"/circle/{code}/score", json={"week": _wk, "points": 120, "streak": 3}).status_code == 200)
+_as(7, "R"); c.post(f"/circle/{code}/score", json={"week": _wk, "points": 80, "streak": 5})
+b = c.get(f"/circle/{code}").json()
+ok("leaderboard sorted, me flagged, no emails", [m["display"] for m in b["members"]] == ["Aman", "Ritik"] and b["members"][1]["me"] and "@" not in str(b), str(b))
+_as(9, "Outsider")
+ok("outsider cannot read board", c.get(f"/circle/{code}").status_code == 404)
+ok("mine lists circle", c.get("/circle/mine").json() == [])
+_as(8, "Aman"); ok("mine lists circle (member)", c.get("/circle/mine").json()[0]["members"] == 2)
+c.post(f"/circle/{code}/leave"); _as(7, "R"); c.post(f"/circle/{code}/leave")
+ok("empty circle removed", c.get(f"/circle/{code}").status_code == 404)
+main.app.dependency_overrides.clear()
+ok("event counts", c.post("/ev", json={"name": "tool_open:duel"}).json()["ok"] and c.post("/ev", json={"name": "tool_open:duel"}).json()["ok"])
+ok("event rejects junk", c.post("/ev", json={"name": "<script>"}).json()["ok"] is False)
+
+
 # --- v31: share links ---
 deck = [{"q": "Capital of India?", "a": "New Delhi"}, {"term": "H2O", "definition": "Water"}, {"q": "", "a": "x"}]
 r = c.post("/share", json={"kind": "flashcards", "title": "GK", "items": deck}); sid = r.json().get("id")

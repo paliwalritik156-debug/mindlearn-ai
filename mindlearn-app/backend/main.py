@@ -307,7 +307,7 @@ def purge_user_data(uid, email=None):
     shutil.rmtree(_persist_dir(uid), ignore_errors=True)
     c = _db()
     try:
-        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads", "shares"):
+        for t in ("docs", "active", "usage", "chunks", "feedback", "errors", "uploads", "shares", "circle_members"):
             c.execute(f'delete from {t} where "user"=?', (str(uid),))
         c.commit()
     finally:
@@ -319,6 +319,8 @@ def purge_user_data(uid, email=None):
 
 from extras_router import build_extras_router
 app.include_router(build_extras_router(get_current_user))
+from circle_router import build_circle_router
+app.include_router(build_circle_router(get_current_user))
 
 # login, register, forgot/reset password, change password, delete account
 if not os.getenv("MINDLEARN_SKIP_AUTH_ROUTER"):

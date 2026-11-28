@@ -14,7 +14,7 @@ const PAGES = {
     <h4>What we handle</h4><p>Your account details (name, email and a hashed password), the PDFs you upload, and the questions you ask.</p>
     <h4>How PDFs are used</h4><p>Uploaded PDFs are processed by our server to extract text. Parts of that text and your questions are sent to a third-party AI provider (Groq) to generate answers. Do not upload documents you are not allowed to share.</p>
     <h4>What stays on your device</h4><p>Progress, scores, flashcards, settings and a copy of your PDFs for page highlighting are stored in your browser. Clearing browser data removes them. You can export a backup from Settings.</p>
-    <h4>Analytics &amp; errors</h4><p>If enabled by the site owner, privacy-friendly analytics (Plausible, no cookies) and anonymous error reports may be collected.</p>
+    <h4>Analytics &amp; errors</h4><p>If enabled by the site owner, privacy-friendly analytics (Plausible, no cookies) and anonymous error reports may be collected. We also count how often each tool is opened (a daily total per tool, with no account, no IP and no content stored). Turn this off by enabling your browser's Do Not Track setting.</p>
     <h4>Your choices</h4><p>Delete local data and stored PDFs any time from Settings and the Library. To remove your account and server-side data, contact the site owner.</p>
   </>) },
   terms: { title:"Terms of Use", body: ()=>(<>
