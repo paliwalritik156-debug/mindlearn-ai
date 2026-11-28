@@ -1,17 +1,13 @@
 import { useEffect, useRef, useState } from "react"
 import { askText, parseJSONLoose, toast, Spin, useLocalState, LANGS, getOutLang, langInstruction } from "./lib.jsx"
+import { bestVoice } from "./voicelib.js"
 import { TYPES, COUNTS, MAX_ANSWER_SECS, SILENCE_MS, wordCount, fillerCount, questionsPrompt, parseQuestions, evalPrompt, parseEval, skipped, summaryPrompt, parseSummary, report } from "./interviewlib.js"
 
 const SR = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null
 const isHi = ()=>getOutLang() !== "en"
 const mmss = s=>`${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`
 
-function pickVoice(lang){
-  try{
-    const vs = window.speechSynthesis.getVoices() || []
-    return vs.find(v=>v.lang === lang && /female|google|samantha|veena|heera|zira/i.test(v.name)) || vs.find(v=>v.lang === lang) || vs.find(v=>v.lang?.slice(0, 2) === lang.slice(0, 2)) || null
-  }catch(e){ return null }
-}
+function pickVoice(lang){ try{ return bestVoice(window.speechSynthesis.getVoices() || [], lang) }catch(e){ return null } }
 
 export default function InterviewTab(){
   const [stage, setStage] = useState("setup")       // setup | loading | live | report

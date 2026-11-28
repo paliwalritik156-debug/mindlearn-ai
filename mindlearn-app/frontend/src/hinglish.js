@@ -13,7 +13,7 @@ const T = {
   scores:["Leaderboard","Dosti wala competition, zyadatar khud se."], prompt:["Custom AI Prompt","Tutor ko batao kaise padhana hai."],
   typing:["Typing Trainer","Soch se tez type karo."], mnemonics:["Yaad rakhne ki tricks","Dimaag ko jo chahiye tha wo tricks."],
   difficulty:["Difficulty Rater","Seedhi baat, andaza nahi lagana padega."], srs:["Spaced Repetition","June mein yaad rahe, sirf kal nahi."],
-  debate:["Khud se debate","Khud se bahas karo, kaam ki."], reading:["Reading Tracker","Taaki PDF padi-padi tumhe judge na kare."],
+  debate:["Live Debate (Pari)","Pari se awaaz me bahas karo."], reading:["Reading Tracker","Taaki PDF padi-padi tumhe judge na kare."],
   multipdf:["Multi-PDF Chat","Ek baatcheet, saari readings."], codegen:["Code Generator","Pseudocode se asli code tak."],
   debugger:["Code Debugger","Tumhari rubber duck, jo jawab deti hai."], reviewer:["Code Reviewer","Wo imaandar teammate."],
   algorithm:["Algorithm Visualizer","Logic ko dekho, sirf padho mat."], knowledge:["3D Knowledge Map","Tumhara PDF, vichaaron ki galaxy."],

@@ -2159,3 +2159,29 @@ html.light .wizard input[type=date]{background:#fff;border-color:rgba(70,35,10,.
 .circle-row{display:grid;grid-template-columns:34px 1fr auto auto;gap:10px;align-items:center;padding:8px 6px;border-top:1px solid rgba(255,255,255,.07)}
 .circle-row.me{background:rgba(var(--v-rgb),.14);border-radius:10px}.cr-r{font-size:1.15rem;text-align:center}.cr-s{font-size:.8rem;opacity:.75}
 html.light .circle-board{background:#FFF3E8}html.light .circle-row{border-top-color:rgba(70,35,10,.1)}
+
+/* v56 Live Debate with Pari */
+.dbt-setup,.dbt-live,.dbt-report{display:grid;gap:12px;max-width:720px}
+.dbt-setup label{display:grid;gap:8px;font-size:.88rem}.dbt-setup input[type=text],.dbt-setup input:not([type]),.dbt-setup select{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;font:inherit}
+html.light .dbt-setup input,html.light .dbt-setup select{background:#fff;border-color:rgba(70,35,10,.2);color:var(--text)}
+.dbt-check{display:flex!important;grid-template-columns:none;align-items:center;gap:8px}
+.dbt-voice{display:flex;gap:8px}.dbt-voice select{flex:1}
+.dbt-hero{display:flex;gap:16px;align-items:center}.dbt-hero h3{margin:0 0 4px}.dbt-hero p{margin:0;opacity:.8;font-size:.9rem}
+.dbt-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.85rem;opacity:.85}
+.dbt-stage{position:relative;display:grid;place-items:center;gap:10px;padding:18px 0 8px;min-height:220px}
+.dbt-status{font-size:.9rem;opacity:.85}
+.dbt-cam{position:absolute;top:8px;right:8px;width:128px;height:96px;object-fit:cover;border-radius:14px;border:2px solid rgba(var(--v-rgb),.5);transform:scaleX(-1);background:#000}
+.dbt-chat{display:grid;gap:8px}.dbt-chat small{opacity:.75}
+.dbt-live-text{min-height:52px;padding:12px 14px;border-radius:14px;border:1px dashed rgba(var(--v-rgb),.5);font-size:1rem}
+.pari-orb{position:relative;width:110px;height:110px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#ffd9ec,var(--v) 55%,var(--cy));box-shadow:0 10px 40px -10px rgba(var(--v-rgb),.7)}
+.pari-orb b{font-size:2.2rem;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+.pari-orb i{position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(var(--v-rgb),.45);opacity:0}
+.pari-orb.speaking i{animation:pariRing 1.4s ease-out infinite}.pari-orb.speaking i+i{animation-delay:.7s}
+.pari-orb.speaking{animation:pariBeat .9s ease-in-out infinite}
+.pari-orb.listening{box-shadow:0 0 0 6px rgba(80,220,140,.35),0 10px 40px -10px rgba(80,220,140,.6)}
+.pari-orb.thinking{animation:pariSpin 1.6s linear infinite}
+@keyframes pariRing{0%{transform:scale(.95);opacity:.8}100%{transform:scale(1.45);opacity:0}}
+@keyframes pariBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes pariSpin{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(40deg)}}
+@media (prefers-reduced-motion:reduce){.pari-orb,.pari-orb i{animation:none!important}}
+@media (max-width:640px){.dbt-cam{width:92px;height:70px}}

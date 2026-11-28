@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { askText, toast, Spin, getOutLang, LANGS, useLocalState } from "./lib.jsx"
+import { bestVoice } from "./voicelib.js"
 import { chunkText, audioPrompt, stripMd } from "./v54lib.js"
 
 export default function AudioRevTab(){
@@ -13,8 +14,7 @@ export default function AudioRevTab(){
   const synth = typeof window !== "undefined" ? window.speechSynthesis : null
   useEffect(()=>()=>{ R.current.on = false; try{ synth?.cancel() }catch(e){} }, [])
   const voiceFor = ()=>{
-    const want = LANGS[getOutLang()]?.tts || "en-IN", vs = synth?.getVoices() || []
-    return vs.find(v=>v.lang === want) || vs.find(v=>v.lang?.startsWith(want.slice(0, 2))) || null
+    return bestVoice(synth?.getVoices() || [], LANGS[getOutLang()]?.tts || "en-IN")
   }
   const speakFrom = i=>{
     const r = R.current

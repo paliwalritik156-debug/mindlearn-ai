@@ -770,6 +770,7 @@ import { addToSrs } from "./v46lib.js"
 import { shareCard } from "./sharecard.js"
 import { evName } from "./circlelib.js"
 const trackTool = k=>{ try{ if(navigator.doNotTrack === "1" || localStorage.getItem("ml_no_stats")) return; api.post("/ev", { name: evName(k) }, { silent: true }).catch(()=>{}) }catch(e){} }
+const DebateLive = lazy(()=>import("./debate.jsx"))
 const CircleTab = lazy(()=>import("./circle.jsx"))
 const SetupWizard = lazy(()=>import("./setup.jsx"))
 const AudioRevTab = lazy(()=>import("./audiorev.jsx"))
@@ -1061,7 +1062,7 @@ function getTabComponent(key){
     vocabquiz: VocabQuizTab, map: ConceptMapTab, bookmarks: BookmarksTab, studyplan: StudyPlanTab,
     interview: MockInterviewTab, theme: ThemePicker, scores: LeaderboardTab, prompt: CustomPromptTab,
     typing: TypingTestTab, mnemonics: MnemonicsTab, difficulty: DifficultyRater, srs: SpacedRepetitionTab,
-    debate: SelfDebate, reading: ReadingTrackerTab, multipdf: MultiPDFChat, codegen: CodeGeneratorTab,
+    debate: DebateLive, reading: ReadingTrackerTab, multipdf: MultiPDFChat, codegen: CodeGeneratorTab,
     debugger: CodeDebuggerTab, reviewer: CodeReviewerTab, algorithm: AlgorithmVisualizerTab, codequiz: CodeQuizTab,
     pyq: PyqTab, coach: CoachTab, circle: CircleTab, audio: AudioRevTab, room: RoomTab, photodoubt: PhotoDoubtTab, cheatsheet: CheatSheetTab, duel: DuelTab, teachback: TeachBackTab, knowledge: ()=><KnowledgeMapTab Quiz={Quiz}/>, weakspots: ()=><WeakSpotsTab Quiz={Quiz}/>, exam: ExamTab, voice: VoiceTab, library: LibraryTab, settings: SettingsTab, mynotes: MyNotesTab, pdfsearch: PdfSearchTab, report: WeeklyReportTab, planner: PlannerTab, swipe: SwipeTab, listen: ListenTab, sketch: SketchTab,
   }
