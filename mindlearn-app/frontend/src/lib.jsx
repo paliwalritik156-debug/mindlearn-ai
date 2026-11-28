@@ -213,7 +213,7 @@ export const sounds = {
 
 // ---------------- themes ----------------
 export const THEMES = {
-  orange:  { name:"Sunrise Orange", v:"#FF7A1A", cy:"#FFC247", bg:"#0C0705", lv:"#EA580C", lcy:"#B45309", lbg:"#FFF8F0" },
+  orange:  { name:"Sunrise Orange", v:"#FF7A1A", cy:"#FFC247", bg:"#0C0705", lv:"#C84A0C", lcy:"#A5480B", lbg:"#FFF8F0" },
   nova:    { name:"Nova Violet",  v:"#8B6BFF", cy:"#2DE3F0", bg:"#050508" },
   ember:   { name:"Ember",        v:"#FB7185", cy:"#FBBF24", bg:"#0B0708" },
   forest:  { name:"Forest",       v:"#34D399", cy:"#A3E635", bg:"#06100B" },

@@ -2087,3 +2087,54 @@ html.light .card{ box-shadow:0 1px 2px rgba(70,35,10,.07), 0 12px 28px -16px rgb
 /* v51: light mode = orange everywhere (logo, hero demo video); dark mode untouched */
 html.light{ --logo-a:#F97316; --logo-b:#F59E0B; }
 html.light .wt-video{ filter:hue-rotate(128deg) saturate(1.25) brightness(1.05); }
+
+/* v52 auto light-mode text darkening for bright hard-coded colours */
+html.light .form-err{ color:#70323b; }
+html.light .tool-pin.on{ color:#6e4f1b; }
+html.light .tool-card:hover .tool-pin{ color:#6e4f1b; }
+html.light .qopt.correct .qopt-mark{ color:#175e44; }
+html.light .qopt.wrong .qopt-mark{ color:#70323b; }
+html.light .exam-timer.low{ color:#70323b; }
+html.light .btn.flagged{ color:#6e4f1b; }
+html.light .rep-pills .ok{ color:#175e44; }
+html.light .rep-pills .bad{ color:#70323b; }
+html.light .legal-note{ color:#6e4704; }
+html.light .btn.danger{ color:#6f3232; }
+html.light .sync-pill.on{ color:#175e44; }
+html.light .sync-pill.error{ color:#6f3232; }
+html.light .pr-tag{ color:#6e4704; }
+html.light .cmp-row i.y{ color:#175e44; }
+html.light .brief-head .up{ color:#175e44; }
+html.light .brief-head .down{ color:#6e4704; }
+html.light .af-ok{ color:#175e44; }
+html.light .af-err{ color:#6f3232; }
+html.light .af-caps{ color:#6e4704; }
+html.light .pw-label.s0{ color:#6f3232; }
+html.light .pw-label.s1{ color:#6f3232; }
+html.light .pw-label.s2{ color:#6e4704; }
+html.light .pw-label.s3{ color:#496717; }
+html.light .pw-label.s4{ color:#175e44; }
+html.light .pw-list li.ok{ color:#175e44; }
+html.light .auth-err{ color:#714a4a; }
+html.light /* wrapped */
+html.light /* selection toolbar */
+html.light .sw-stamp.good{ color:#175e44; }
+html.light .sw-stamp.bad{ color:#6f3232; }
+html.light .em-tag{ color:#714a4a; }
+html.light .pyq-err{ color:#714a4a; }
+html.light .pyq-res.ok{ color:#175e44; }
+html.light .pyq-res.bad{ color:#6f3232; }
+html.light .pyq-conf.low{ color:#6e4704; }
+html.light .mock-clock.low{ color:#6f3232; }
+html.light .chip.mock-right{ color:#175e44; }
+html.light .chip.mock-wrong{ color:#6f3232; }
+html.light .btn.on{ color:#6e4704; }
+
+/* v52 light-mode contrast fixes (from a measured audit) */
+html.light{ --cy:#A5480B; --cy-rgb:165,72,11; --text-dim:#54402F; --v:#C84A0C; --v-rgb:200,74,12; }
+html.light .btn-p, html.light .btn.btn-p, html.light .hero-cta-row .btn-p{ background:linear-gradient(135deg,#B33806,#C94A0A 70%,#D45A0E); color:#fff; text-shadow:none; box-shadow:0 10px 24px -10px rgba(190,63,8,.6); }
+html.light .sync-pill.on{ background:rgba(4,120,87,.14); color:#047857; }
+html.light .coach-set label, html.light .duel-setup label, html.light .tb label{ color:var(--text-dim); }
+html.light .fpage-tag{ color:#9A3412; }
+html.light .hero-phase span.on{ background:linear-gradient(135deg,#B33806,#C94A0A); }
+html.light .pyq-note, html.light .coach-note, html.light small{ color:var(--text-dim); opacity:1; }
