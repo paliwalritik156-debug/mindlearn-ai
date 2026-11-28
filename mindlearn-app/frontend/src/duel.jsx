@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { askText, parseJSONLoose, toast, Spin, useLocalState, recordAnswers } from "./lib.jsx"
+import { shareCard } from "./sharecard.js"
 import { duelPrompt, parseDuelQs, score as scoreOf, duelUrl, decodeDuel, verdict, shareText } from "./duellib.js"
 
 const copy = async (txt, msg)=>{ try{ await navigator.clipboard.writeText(txt); toast(msg, "success") }catch(e){ window.prompt("Copy this:", txt) } }
@@ -67,6 +68,7 @@ export default function DuelTab(){
       <p>in {res.secs}s. Ab dost ko challenge bhejo, wo bina sign-in ke khel sakta hai.</p>
       <div className="duel-actions">
         <button type="button" className="btn btn-p" onClick={()=>share(duelUrl(res), `${res.name} challenges you on "${res.title}": beat ${res.score}/${res.qs.length} in ${res.secs}s ⚔`)}>⚔ Send challenge link</button>
+        <button type="button" className="btn" data-testid="share-card" onClick={async ()=>{ const r = await shareCard({ kind: "duel", big: `${res.score}/${res.qs.length}`, sub: res.title, who: `${res.name} challenges you` }, "duel.png"); if(r === "downloaded") toast("Image download ho gayi 📤") }}>📤 Share as image</button>
         <button type="button" className="btn" onClick={()=>{ setStage("setup"); setRes(null) }}>New duel</button>
       </div>
       <p className="coach-note">Note: sawal aur jawab link ke andar hote hain, to koi tech-savvy dost link decode karke jawab dekh sakta hai. Friendly games ke liye theek hai, exam ke liye nahi.</p>

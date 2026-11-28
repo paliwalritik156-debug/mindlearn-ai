@@ -17,7 +17,7 @@ const T = {
   multipdf:["Multi-PDF Chat","Ek baatcheet, saari readings."], codegen:["Code Generator","Pseudocode se asli code tak."],
   debugger:["Code Debugger","Tumhari rubber duck, jo jawab deti hai."], reviewer:["Code Reviewer","Wo imaandar teammate."],
   algorithm:["Algorithm Visualizer","Logic ko dekho, sirf padho mat."], knowledge:["3D Knowledge Map","Tumhara PDF, vichaaron ki galaxy."],
-  photodoubt:["Photo doubt","Photo kheencho, solve karo."], room:["Study room","Dost ke saath ek timer."], cheatsheet:["Cheat-sheet","Ek page me poora revision."], duel:["Duel","Dost ko challenge karo."], teachback:["Teach it back","Confused student ko samjhao."], coach:["Exam Coach","Countdown aur roz ka plan."], pyq:["PYQ Practice","Purane paper, asli practice."], weakspots:["Weak-Spot Radar","Jaano kahan phisalte ho."], exam:["Exam Simulator","Asli paper, asli clock."],
+  audio:["Audio revision","Sunke revise karo."], photodoubt:["Photo doubt","Photo kheencho, solve karo."], room:["Study room","Dost ke saath ek timer."], cheatsheet:["Cheat-sheet","Ek page me poora revision."], duel:["Duel","Dost ko challenge karo."], teachback:["Teach it back","Confused student ko samjhao."], coach:["Exam Coach","Countdown aur roz ka plan."], pyq:["PYQ Practice","Purane paper, asli practice."], weakspots:["Weak-Spot Radar","Jaano kahan phisalte ho."], exam:["Exam Simulator","Asli paper, asli clock."],
   swipe:["Swipe Cards","Flashcards swipe karke review karo."], listen:["Listen Mode","Notes ko audio bana do."],
   sketch:["Sketchpad","Diagram aur formulas banao."], planner:["Study Planner","Exam tak din-ba-din plan."],
   mynotes:["Mere Notes","Tumhare apne notes, hamesha saved."], pdfsearch:["PDF mein dhoondo","Ctrl+F, par saare PDFs ke liye."],

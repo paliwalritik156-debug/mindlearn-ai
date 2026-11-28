@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { api, toast, Spin, useLocalState, recordAnswers, getOutLang, askText } from "./lib.jsx"
 import { whyWrongPrompt } from "./v46lib.js"
+import { shareCard } from "./sharecard.js"
 import { SCHEMES, defaultMinutes, fmtClock, scorable, scoreMock, topicBreakdown } from "./mock.js"
 import { queueMistakes } from "./revenge.js"
 import { CAUSES, causeLabel, pushLog, setLogCause, addToQueue, dueItems, waitingItems, gradeItem, setItemField, daysUntil, mistakeDna, BOX_DAYS } from "./mistakes.js"
@@ -469,6 +470,7 @@ function MockView({ goto }){
         <div className="ad-stat"><div className="ad-n">{res.wrong}</div><div className="ad-l">Wrong</div></div>
         <div className="ad-stat"><div className="ad-n">{res.skipped}</div><div className="ad-l">Skipped</div></div>
       </div>
+      <button type="button" className="btn btn-sm" data-testid="share-card" onClick={async ()=>{ const r = await shareCard({ kind: "mock", big: `${res.pct}%`, sub: `${res.right} correct in ${fmtClock(res.used)}` }, "mock.png"); if(r === "downloaded") toast("Image download ho gayi 📤") }}>📤 Share card</button>
       <p className="pyq-note">Time used: {fmtClock(res.used)} of {minutes} min.{res.added ? ` ${res.added} wrong answer${res.added > 1 ? "s were" : " was"} added to your Revenge Queue ⚔` : ""}</p>
       <h4>By topic (weakest first)</h4>
       {topics.map(t=><div className="dna-row" key={t.topic}><span className="dna-l">{t.topic}</span><div className="dna-bar"><i style={{ width: t.pct + "%" }} /></div><span className="dna-n">{t.right}/{t.n}</span></div>)}
